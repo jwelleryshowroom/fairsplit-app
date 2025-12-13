@@ -6,7 +6,7 @@ import {
   ChevronRight, Calendar, Zap, Utensils, Split, 
   ArrowRight, Shield, Mail, LogOut, Home, User, 
   History, PlusCircle, ArrowUpRight, UserPlus, Star, 
-  LayoutDashboard, RefreshCw, Clock
+  LayoutDashboard, RefreshCw, Clock, HelpCircle, Merge, AlertTriangle, Lightbulb
 } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
@@ -16,8 +16,8 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   signOut, 
-  onAuthStateChanged,
-  signInAnonymously,
+  onAuthStateChanged, 
+  signInAnonymously, 
   signInWithCustomToken
 } from "firebase/auth";
 import { 
@@ -25,24 +25,35 @@ import {
   doc, 
   setDoc, 
   getDoc, 
-  onSnapshot,
-  collection,
-  query,
-  where,
-  getDocs,
+  onSnapshot, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
   deleteDoc
 } from "firebase/firestore";
 
-// --- FIREBASE CONFIGURATION ---
+// --- ENV VAR UTILITY ---
+// Helper to safely access env vars in both Vite and non-Vite environments
+const getEnv = (key) => {
+  try {
+    // Check if import.meta.env exists (Vite)
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      return import.meta.env[key] || "";
+    }
+  } catch (e) {
+    // Ignore errors in environments that don't support import.meta
+  }
+  return "";
+};
+
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-  // Use the import.meta.env object to access the key
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN, 
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  apiKey: getEnv("VITE_FIREBASE_API_KEY"),
+  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN"), 
+  projectId: getEnv("VITE_FIREBASE_PROJECT_ID"),
   
-  // You can leave these hardcoded if you rarely change them, 
-  // or move them to .env as well:
+  // You can leave these hardcoded or move them to .env as well:
   storageBucket: "fairsplit-ab339.firebasestorage.app",
   messagingSenderId: "935976689696",
   appId: "1:935976689696:web:d89f3a22886a8624e9dc45"
@@ -76,6 +87,12 @@ const generateRoomCode = () => {
     return result; 
 };
 
+// Helper to remove markdown bold syntax if AI adds it
+const cleanText = (text) => {
+    if (!text) return "";
+    return text.replace(/\*\*/g, "").replace(/\*/g, ""); // Removes ** and *
+};
+
 // --- SUB-COMPONENTS ---
 
 const LoadingScreen = ({ message = "Please wait..." }) => (
@@ -93,7 +110,70 @@ const LoadingScreen = ({ message = "Please wait..." }) => (
     </div>
 );
 
-const MemberCard = ({ member, daysInMonth, updateMember, removeMember, onSmartParse }) => {
+const OnboardingTour = ({ isOpen, onClose }) => {
+  const [step, setStep] = useState(0);
+  
+  if (!isOpen) return null;
+
+  const steps = [
+    {
+      title: "Welcome to FairSplit! 👋",
+      desc: "The easiest way to split expenses for trips, flats, or events without the math headache.",
+      icon: <IndianRupee className="w-12 h-12 text-indigo-500" />
+    },
+    {
+      title: "1. Add Members & Expenses 👥",
+      desc: "Add your group members. Enter their 'Daily' spending (like food) or 'Fixed' bills (like rent) directly. Try the 'AI Add' button to parse messy text!",
+      icon: <Users className="w-12 h-12 text-emerald-500" />
+    },
+    {
+      title: "2. Handle Side Expenses 🔀",
+      desc: "Use the 'Custom Splits' section below for specific bills paid by one person for a few others (e.g., Ankit paid for dinner for just 3 people).",
+      icon: <Split className="w-12 h-12 text-orange-500" />
+    },
+    {
+      title: "3. Settle Up Instantly 🚀",
+      desc: "Click 'Calculate Split' to see exactly who owes whom. You can even draft a WhatsApp settlement message with one click!",
+      icon: <Check className="w-12 h-12 text-blue-500" />
+    }
+  ];
+
+  const handleNext = () => {
+    if (step < steps.length - 1) setStep(step + 1);
+    else onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 relative overflow-hidden transform transition-all scale-100">
+        {/* Progress Bar */}
+        <div className="absolute top-0 left-0 h-1.5 bg-slate-100 w-full">
+            <div className="h-full bg-indigo-500 transition-all duration-300 ease-out" style={{ width: `${((step + 1) / steps.length) * 100}%` }}></div>
+        </div>
+
+        <div className="flex flex-col items-center text-center mt-4">
+            <div className="mb-6 p-5 bg-slate-50 rounded-2xl shadow-inner">
+                {steps[step].icon}
+            </div>
+            <h3 className="text-xl font-extrabold text-slate-800 mb-3">{steps[step].title}</h3>
+            <p className="text-slate-500 mb-8 leading-relaxed text-sm">{steps[step].desc}</p>
+        </div>
+
+        <div className="flex gap-3">
+            {step > 0 && (
+                <button onClick={() => setStep(step - 1)} className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors">Back</button>
+            )}
+            <button onClick={handleNext} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                {step === steps.length - 1 ? "Let's Start!" : "Next"}
+            </button>
+        </div>
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-300 hover:text-slate-500 p-1 rounded-full hover:bg-slate-100 transition-colors"><X className="w-5 h-5"/></button>
+      </div>
+    </div>
+  );
+};
+
+const MemberCard = ({ member, daysInMonth, updateMember, removeMember, onSmartParse, isDuplicate, isInvalid }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [expenseType, setExpenseType] = useState('variable'); 
 
@@ -110,21 +190,41 @@ const MemberCard = ({ member, daysInMonth, updateMember, removeMember, onSmartPa
   const fixedBreakdown = useMemo(() => getBreakdown(member.fixedExpenseInput), [member.fixedExpenseInput]);
   const currentBreakdown = expenseType === 'variable' ? variableBreakdown : fixedBreakdown;
 
+  // Determine if we should show an error state
+  const hasError = isDuplicate || isInvalid;
+  const errorMessage = isDuplicate ? "Name already exists" : (isInvalid ? "Name is required" : "");
+
   return (
-    <div className="group relative bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-lg hover:border-indigo-100 transition-all duration-300">
+    <div className={`group relative bg-white rounded-2xl p-5 border ${hasError ? 'border-red-300 shadow-red-100 bg-red-50/30' : 'border-gray-100'} shadow-sm hover:shadow-lg hover:border-indigo-100 transition-all duration-300`}>
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
         {/* Name Input */}
         <div className="flex-1 w-full min-w-[150px]">
-          <label className="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Name</label>
+          <label className={`block text-xs font-bold mb-1.5 uppercase tracking-wider ${hasError ? 'text-red-500' : 'text-gray-400'}`}>Name</label>
           <div className="relative group/input">
-             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors group-focus-within/input:text-indigo-500"><Users className="h-4 w-4 text-gray-300" /></div>
-            <input type="text" placeholder="e.g. Rahul" value={member.name} onChange={(e) => updateMember(member.id, 'name', e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder-gray-400"/>
+             <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors ${hasError ? 'text-red-400' : 'group-focus-within/input:text-indigo-500'}`}><Users className={`h-4 w-4 ${hasError ? 'text-red-400' : 'text-gray-300'}`} /></div>
+            <input 
+                type="text" 
+                placeholder="e.g. Rahul" 
+                value={member.name} 
+                onChange={(e) => updateMember(member.id, 'name', e.target.value)} 
+                className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border ${hasError ? 'border-red-500 focus:ring-red-200 bg-white' : 'border-gray-200 focus:ring-indigo-500'} rounded-xl focus:bg-white focus:ring-2 focus:border-transparent outline-none transition-all font-medium text-gray-700 placeholder-gray-400`}
+            />
           </div>
+          {hasError && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1 animate-in slide-in-from-top-1"><AlertCircle className="w-3 h-3"/> {errorMessage}</p>}
         </div>
 
         {/* Absent Days */}
         <div className="w-full md:w-24">
-          <label className="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Absent</label>
+          <label className="text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wider flex items-center gap-1 group/label cursor-help">
+            Absent
+            <div className="relative">
+                <HelpCircle className="w-3 h-3 text-gray-300 group-hover/label:text-indigo-400 transition-colors" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover/label:opacity-100 pointer-events-none transition-opacity z-50 normal-case font-normal text-center shadow-lg">
+                    Enter days this person was away. They won't pay for daily expenses (food) for these days.
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+            </div>
+          </label>
           <input type="number" min="0" max={parseInt(daysInMonth) || 30} value={member.daysAbsent} onChange={(e) => updateMember(member.id, 'daysAbsent', e.target.value)} className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium text-center text-gray-700"/>
         </div>
 
@@ -208,15 +308,32 @@ const CustomSplitManager = ({ members, customSplits, setCustomSplits }) => {
         else { setInvolvedIds([...involvedIds, id]); }
     };
     
+    // --- UPDATED: Prevent adding duplicate guests ---
     const addExternal = () => {
-        if (!extName.trim()) return;
-        const newId = `EXT:${extName.trim()}`;
+        const nameToCheck = extName.trim();
+        if (!nameToCheck) return;
+
+        // 1. Check if real member exists with this name (Case insensitive)
+        const existingMember = members.find(m => m.name.trim().toLowerCase() === nameToCheck.toLowerCase());
+        if (existingMember) {
+            // If it's a real member, simply toggle them in the list if not already there
+            if (!involvedIds.includes(existingMember.id)) {
+                setInvolvedIds([...involvedIds, existingMember.id]);
+            }
+            setExtName('');
+            setShowExtInput(false);
+            return;
+        }
+
+        // 2. Standard Guest Add (if not a real member)
+        const newId = `EXT:${nameToCheck}`;
         if (!involvedIds.includes(newId)) {
             setInvolvedIds([...involvedIds, newId]);
         }
         setExtName('');
         setShowExtInput(false);
     };
+    // ------------------------------------------------
 
     const addSplit = () => {
         setAddError('');
@@ -377,7 +494,7 @@ const LoginView = () => {
                         className="w-full bg-indigo-600/50 hover:bg-indigo-600 active:scale-95 text-white font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 border border-indigo-400/30 hover:border-indigo-400"
                     >
                         <User className="w-5 h-5" />
-                        Continue as Guest (Test Mode)
+                        Continue as Guest
                     </button>
                     
                     <div className="mt-8 flex items-center justify-center gap-2 text-xs text-indigo-300">
@@ -674,16 +791,18 @@ const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
 };
 
 const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
-    // CHANGE THIS LINE:
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
-    
-    // ... rest of your code
+    // Use optional chaining to safely access environment variables
+    const apiKey = getEnv("VITE_GEMINI_API_KEY"); 
     const [daysInMonth, setDaysInMonth] = useState('30');
     const [members, setMembers] = useState([]);
     const [customSplits, setCustomSplits] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
     const [roomName, setRoomName] = useState(initialRoomName || '');
     const [groupExists, setGroupExists] = useState(true);
+    const [invalidMemberIds, setInvalidMemberIds] = useState([]); // Track members with empty names
+    const [insights, setInsights] = useState('');
+    const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     useEffect(() => {
         if (!db || !groupId) return;
@@ -708,8 +827,20 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 setLoadingData(false);
             }
         });
+
+        // Check for onboarding
+        const hasOnboarded = localStorage.getItem('fairsplit_onboarded');
+        if (!hasOnboarded) {
+            setShowOnboarding(true);
+        }
+
         return () => unsubscribe();
     }, [groupId, user]);
+
+    const closeOnboarding = () => {
+        setShowOnboarding(false);
+        localStorage.setItem('fairsplit_onboarded', 'true');
+    };
 
     const saveData = async (newMembers, newDays, newSplits) => {
         if (!db || !groupId) return;
@@ -781,20 +912,130 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const handleDraftMessage = async () => {
         if (!results) return;
         setIsDrafting(true); setShowDraftModal(true);
-        try { const message = await callGemini(`Write whatsapp msg for split: ${JSON.stringify(results.transactions)}`); setDraftedMessage(message); } catch (err) { setDraftedMessage("Error."); } finally { setIsDrafting(false); }
+        try { 
+            const message = await callGemini(`Write a casual, emoji-rich WhatsApp message for group "${roomName}" settlement.
+            Transactions: ${JSON.stringify(results.transactions)}.
+            Context: This is an expense splitting app.
+            
+            Requirements:
+            - Use Indian Rupee symbol (₹).
+            - Format lines like: "Name ➡️ Name: ₹Amount"
+            - Intro: Something catchy like "Time to settle up! 💸" (Don't assume a specific month unless "${roomName}" implies it).
+            - Outro: "All settled! 🎉"
+            - Do not include subject lines or placeholders.`); 
+            setDraftedMessage(cleanText(message)); 
+        } catch (err) { setDraftedMessage("Error."); } finally { setIsDrafting(false); }
     };
+
+    const generateInsights = async () => {
+        if (!results) return;
+        setIsGeneratingInsights(true);
+        const prompt = `Analyze these expenses for group "${roomName}".
+        Total Variable Cost: ₹${results.totalVariable}
+        Total Fixed Cost: ₹${results.totalFixed}
+        Breakdown:
+        ${results.balances.map(m => `${m.name}: Net Balance ${m.netBalance}`).join(', ')}
+        
+        Provide a fun, modern, 3-bullet summary suitable for a Gen-Z/Millennial Indian user.
+        1. Identify the "Big Spender" 💸.
+        2. Identify the "Savings King/Queen" 👑.
+        3. A general observation about the group's spending style.
+        
+        IMPORTANT: 
+        - Use Indian Rupee symbol (₹). 
+        - Do NOT use markdown bolding (like **text**). 
+        - Use emojis liberally. 
+        - Be witty and casual.`;
+        
+        try {
+            const text = await callGemini(prompt);
+            setInsights(cleanText(text));
+        } catch (e) {
+            setInsights("Could not generate insights.");
+        } finally {
+            setIsGeneratingInsights(false);
+        }
+    };
+
     const copyToClipboard = () => { safeCopy(draftedMessage); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); };
     const copyGroupCode = () => { safeCopy(groupId); setCopyCodeSuccess(true); setTimeout(() => setCopyCodeSuccess(false), 2000); };
     
     const parseExpenses = (str) => { try { return str.split(',').reduce((a, c) => a + (parseFloat(c.trim()) || 0), 0); } catch { return 0; } };
     const addMember = () => { const newMembers = [...members, { id: Date.now(), name: '', daysAbsent: 0, expenseInput: '', fixedExpenseInput: '' }]; saveData(newMembers, undefined, undefined); setResults(null); };
     const removeMember = (id) => { const newMembers = members.filter(m => m.id !== id); saveData(newMembers, undefined, undefined); setResults(null); };
-    const updateMember = (id, f, v) => { const newMembers = members.map(m => m.id === id ? { ...m, [f]: v } : m); saveData(newMembers, undefined, undefined); setResults(null); };
     const updateCustomSplits = (newSplits) => { saveData(undefined, undefined, newSplits); };
     const updateDays = (val) => { saveData(undefined, val, undefined); };
+
+    // --- UPDATED updateMember to handle MERGING guests ---
+    const updateMember = (id, f, v) => {
+        const updatedMembers = members.map(m => m.id === id ? { ...m, [f]: v } : m);
+        let updatedSplits = [...customSplits];
+
+        if (f === 'name' && v.trim() !== '') {
+            const newName = v.trim().toLowerCase();
+            // Scan customSplits for any guests matching this name
+            let splitsChanged = false;
+            updatedSplits = updatedSplits.map(split => {
+                const newInvolved = split.involvedIds.map(involvedId => {
+                    if (typeof involvedId === 'string' && involvedId.startsWith('EXT:')) {
+                        const guestName = involvedId.replace('EXT:', '');
+                        if (guestName.toLowerCase() === newName) {
+                            splitsChanged = true;
+                            return id; // Merge: Replace guest ID with the actual member ID
+                        }
+                    }
+                    return involvedId;
+                });
+                // Deduplicate in case both guest and member were selected
+                const uniqueInvolved = [...new Set(newInvolved)];
+                if (uniqueInvolved.length !== split.involvedIds.length) splitsChanged = true;
+                return { ...split, involvedIds: uniqueInvolved };
+            });
+            
+            if (splitsChanged) {
+                saveData(updatedMembers, undefined, updatedSplits);
+                setResults(null);
+                return;
+            }
+        }
+
+        saveData(updatedMembers, undefined, undefined);
+        setResults(null);
+        // Clear error if name is provided for this field
+        if (f === 'name' && v.trim() !== '' && invalidMemberIds.includes(id)) {
+             setInvalidMemberIds(prev => prev.filter(memberId => memberId !== id));
+             if (invalidMemberIds.length <= 1) setError(''); // Clear error if this was the last one
+        }
+    };
+    // ---------------------------------------------------
     
     const calculate = () => {
         setError('');
+        setInvalidMemberIds([]); // Clear previous errors
+
+        // --- NEW VALIDATION: CHECK FOR EMPTY NAMES ---
+        const invalidMembersList = members.filter(m => !m.name || m.name.trim() === '');
+        if (invalidMembersList.length > 0) {
+            const ids = invalidMembersList.map(m => m.id);
+            setInvalidMemberIds(ids);
+            // setError is set below with more context
+            // return; // Wait to set error
+        }
+        
+        // --- NEW VALIDATION: CHECK FOR DUPLICATE NAMES ---
+        const names = members.map(m => m.name.trim().toLowerCase()).filter(n => n !== '');
+        const uniqueNames = new Set(names);
+        if (names.length !== uniqueNames.size) {
+             setError("Duplicate names detected. Please ensure all members have unique names.");
+             return; // Stop here if duplicate
+        }
+
+        if (invalidMembersList.length > 0) {
+             setError(`Please enter names for all members or remove the ${invalidMembersList.length} empty row(s).`);
+             return;
+        }
+        // ---------------------------------------------
+
         if (members.length < 1) { setError('Add member'); return; }
         const validDays = parseInt(daysInMonth) || 30;
         
@@ -889,6 +1130,9 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+             {/* ONBOARDING TOUR MODAL */}
+             <OnboardingTour isOpen={showOnboarding} onClose={closeOnboarding} />
+
              <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm px-4 md:px-8 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
                     <div className="bg-indigo-600 text-white p-1.5 rounded-lg cursor-pointer" onClick={onLeaveGroup}>
@@ -906,6 +1150,9 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button onClick={() => setShowOnboarding(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Help & Tour">
+                        <HelpCircle className="w-5 h-5"/>
+                    </button>
                     <button onClick={onLeaveGroup} className="flex items-center gap-2 text-red-500 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-bold transition-colors">
                         <LogOut className="w-4 h-4"/>
                         <span className="hidden md:inline">Exit</span>
@@ -921,11 +1168,37 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                         <button onClick={addMember} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95"><Plus className="w-4 h-4"/> Add Member</button>
                     </div>
                     <div className="p-6 space-y-4 bg-slate-50/50">
-                        {members.map(m => <MemberCard key={m.id} member={m} daysInMonth={daysInMonth} updateMember={updateMember} removeMember={removeMember} onSmartParse={(id)=>{setActiveMemberId(id);setParseText('');setParseError('');setShowParseModal(true)}} />)}
+                        {members.map(m => {
+                            // Check if this member's name appears more than once in the list
+                            const isDuplicate = members.filter(mem => mem.name.trim().toLowerCase() === m.name.trim().toLowerCase() && mem.name.trim() !== '').length > 1;
+                            const isInvalid = invalidMemberIds.includes(m.id);
+                            return (
+                                <MemberCard 
+                                    key={m.id} 
+                                    member={m} 
+                                    daysInMonth={daysInMonth} 
+                                    updateMember={updateMember} 
+                                    removeMember={removeMember} 
+                                    onSmartParse={(id)=>{setActiveMemberId(id);setParseText('');setParseError('');setShowParseModal(true)}} 
+                                    isDuplicate={isDuplicate}
+                                    isInvalid={isInvalid}
+                                />
+                            );
+                        })}
                     </div>
                     <div className="px-6 pb-6 bg-slate-50/50"><CustomSplitManager members={members} customSplits={customSplits} setCustomSplits={updateCustomSplits}/></div>
                     <div className="p-6 bg-white border-t border-slate-100 text-center">
-                        {error && <div className="text-red-600 mb-4 bg-red-50 p-2 rounded flex justify-center gap-2"><AlertCircle className="w-5 h-5"/>{error}</div>}
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl flex items-center gap-4 text-red-700 shadow-sm animate-in slide-in-from-top-2">
+                                <div className="bg-red-100 p-2 rounded-full">
+                                    <AlertTriangle className="w-5 h-5 text-red-600"/>
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-sm">Action Required</p>
+                                    <p className="text-sm opacity-90">{error}</p>
+                                </div>
+                            </div>
+                        )}
                         <button 
                             onClick={calculate} 
                             className="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all flex justify-center items-center gap-3"
@@ -951,7 +1224,39 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                     </div>
                     <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden mb-10">
                          <div className="px-6 py-4 bg-slate-50 border-b font-bold text-slate-700">Detailed Breakdown</div>
-                         <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="px-6 py-4">Member</th><th className="px-6 py-4">Var Share</th><th className="px-6 py-4">Fixed Share</th><th className="px-6 py-4">Side Share</th><th className="px-6 py-4">Net Balance</th></tr></thead><tbody>{results.balances.map(m=><tr key={m.id} className="border-b"><td className="px-6 py-4 font-bold">{m.name}</td><td className="px-6 py-4">₹{m.variableShare.toFixed(2)}</td><td className="px-6 py-4">₹{m.fixedShare.toFixed(2)}</td><td className="px-6 py-4">₹{m.customShare.toFixed(2)}</td><td className={`px-6 py-4 font-bold ${m.netBalance>=0?'text-emerald-600':'text-red-600'}`}>{m.netBalance}</td></tr>)}</tbody></table></div>
+                         <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead>
+                                    <tr>
+                                        <th className="px-6 py-4">Member</th>
+                                        <th className="px-6 py-4 text-center">Days</th>
+                                        <th className="px-6 py-4">Var Share</th>
+                                        {results.totalFixed > 0 && <th className="px-6 py-4">Fixed Share</th>}
+                                        {results.totalCustom > 0 && <th className="px-6 py-4">Side Share</th>}
+                                        <th className="px-6 py-4">Net Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.balances.map(m => (
+                                        <tr key={m.id} className="border-b hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-700">
+                                                {m.name}
+                                                {m.isGuest && <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded ml-2">GUEST</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-center font-mono text-slate-500">
+                                                {m.daysPresent}<span className="text-xs text-slate-300">/{daysInMonth}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600">₹{m.variableShare.toFixed(2)}</td>
+                                            {results.totalFixed > 0 && <td className="px-6 py-4 text-slate-600">₹{m.fixedShare.toFixed(2)}</td>}
+                                            {results.totalCustom > 0 && <td className="px-6 py-4 text-slate-600">₹{m.customShare.toFixed(2)}</td>}
+                                            <td className={`px-6 py-4 font-bold ${m.netBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                {m.netBalance > 0 ? '+' : ''}{m.netBalance.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                         </div>
                     </div>
                     <div className="bg-gradient-to-b from-emerald-50 to-white rounded-3xl border border-emerald-100 p-8 shadow-lg">
                         <h3 className="text-2xl font-extrabold text-emerald-900 mb-6 flex gap-2"><Check className="w-6 h-6"/> Settlement Plan (Rounded)</h3>
@@ -977,6 +1282,35 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                             ))}
                         </div>}
                         <div className="mt-6 flex gap-3"><button onClick={handleDraftMessage} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-md transition-all active:scale-95"><Sparkles className="w-4 h-4 inline mr-2"/> Draft Message</button></div>
+                    </div>
+
+                    {/* AI Insights Section */}
+                    <div className="mt-6 bg-gradient-to-r from-violet-50 to-purple-50 rounded-3xl border border-purple-100 p-6 shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-purple-600"/> AI Spending Insights
+                            </h3>
+                            {!insights && (
+                                <button 
+                                    onClick={generateInsights} 
+                                    disabled={isGeneratingInsights}
+                                    className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {isGeneratingInsights ? <Loader2 className="w-3 h-3 animate-spin"/> : "Generate"}
+                                </button>
+                            )}
+                        </div>
+                        
+                        {insights ? (
+                            <div className="text-sm text-purple-800 leading-relaxed whitespace-pre-line animate-in fade-in">
+                                {insights}
+                                <button onClick={() => setInsights('')} className="block mt-3 text-xs text-purple-500 underline hover:text-purple-700">Refresh</button>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-purple-400 italic">
+                                Get an AI-powered summary of who spent what and spending habits.
+                            </p>
+                        )}
                     </div>
                   </div>
                 )}
@@ -1093,7 +1427,7 @@ export default function App() {
     if (loadingAuth) return <LoadingScreen />;
 
     if (!user) return <LoginView />;
-    
+     
     if (!groupId) return (
         <WelcomeDashboard 
             user={user} 
@@ -1106,7 +1440,7 @@ export default function App() {
         <ExpenseSplitter 
             user={user} 
             groupId={groupId} 
-            initialRoomName={initialRoomName}
+            initialRoomName={initialRoomName} 
             onLeaveGroup={handleLeaveRoom} 
         />
     );
