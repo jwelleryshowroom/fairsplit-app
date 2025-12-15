@@ -95,7 +95,7 @@ const cleanText = (text) => {
 
 // --- SUB-COMPONENTS ---
 
-const LoadingScreen = ({ message = "Please wait..." }) => (
+const LoadingScreen = ({ message = "Hisaab-kitaab loading... 🚀" }) => (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 animate-in fade-in duration-500">
         <div className="bg-white p-8 rounded-3xl shadow-xl flex flex-col items-center border border-indigo-50">
             <div className="bg-indigo-600 text-white p-4 rounded-2xl mb-6 shadow-lg shadow-indigo-200 animate-bounce">
@@ -867,13 +867,31 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const [parseError, setParseError] = useState(''); // Added dedicated error state for Modal
 
     const callGemini = async (prompt) => {
-        try {
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-          if (!response.ok) throw new Error("API Error"); // Handle API failure explicitely
-          const data = await response.json();
-          return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } catch (err) { console.error(err); throw new Error("Failed"); }
-    };
+    try {
+      // CHANGED: Switched from 'gemini-2.5-flash-preview-09-2025' to 'gemma-3-12b-it'
+      // This gives you ~14,400 requests per day instead of 20.
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        })
+      });
+
+      if (!response.ok) throw new Error("API Error"); 
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } catch (err) {
+      console.error(err);
+      throw new Error("Failed");
+    }
+  };
     
     const handleSmartParse = async () => {
         if (!parseText.trim()) return;
@@ -913,49 +931,101 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
         if (!results) return;
         setIsDrafting(true); setShowDraftModal(true);
         try { 
-            const message = await callGemini(`Write a casual, emoji-rich WhatsApp message for group "${roomName}" settlement.
-            Transactions: ${JSON.stringify(results.transactions)}.
-            Context: This is an expense splitting app.
+            const prompt = `
+            Act like a dramatic, funny Gen Z Indian friend handling the group accounts. 
+            Write a WhatsApp settlement message for the group "${roomName}" in **Hinglish** (mix of Hindi and English).
             
-            Requirements:
+            Data:
+            Transactions: ${JSON.stringify(results.transactions)}
+
+            STRICT CONSTRAINTS:
+            1. **Keep it under 50-100 words** (excluding the list).
+
+            Style Guidelines:
+            - Tone: Casual, witty, slightly dramatic banter.
+            - Slang to use (optional examples): "Bhai", "Yaar", "Paisa nikal", "Gareebi", "Party kab hai?", "Hisab kitab", "Udhari".
+            - Intro: Start with something funny like "Guys, hisab ka waqt aa gaya 💀" or "Bhai log, settlement time! 💸".
+            - Body: List the transactions clearly (Name ➡️ Name: ₹Amount).
+            - Outro: End with a call to action like "Jaldi settle karo, phir party karte hain 🍕" or "GPay fast, I am broke".
             - Use Indian Rupee symbol (₹).
-            - Format lines like: "Name ➡️ Name: ₹Amount"
-            - Intro: Something catchy like "Time to settle up! 💸" (Don't assume a specific month unless "${roomName}" implies it).
-            - Outro: "All settled! 🎉"
-            - Do not include subject lines or placeholders.`); 
+            - Use lots of emojis.
+            `;
+            
+            const message = await callGemini(prompt); 
             setDraftedMessage(cleanText(message)); 
-        } catch (err) { setDraftedMessage("Error."); } finally { setIsDrafting(false); }
+        } catch (err) { 
+            setDraftedMessage("Error generating banter. Try again!"); 
+        } finally { 
+            setIsDrafting(false); 
+        }
     };
 
-    const generateInsights = async () => {
+const generateInsights = async () => {
         if (!results) return;
         setIsGeneratingInsights(true);
-        const prompt = `Analyze these expenses for group "${roomName}".
-        Total Variable Cost: ₹${results.totalVariable}
-        Total Fixed Cost: ₹${results.totalFixed}
+        
+        // 1. Random Rich Names (Variety)
+        const richNames = ["Ambani", "Adani", "Tata", "Birla", "Murthy", "Mahindra", "Poonawalla", "Jhunjhunwala"];
+        const selectedRichName = richNames[Math.floor(Math.random() * richNames.length)];
+
+        // 2. Random Savage Roast Lines (To prevent repetition)
+        const roastLines = [
+            "udhari ka kha-kha ke pet nahi phool gaya tera?",
+            "tera hisaab dekh ke calculator bhi sharma gaya hai!",
+            "agli baar kidney bech ke hisaab barabar karna padega lagta hai.",
+            "itna udhaar toh Vijay Mallya ne bhi nahi liya tha!",
+            "dost hai isliye chhod rahe hain, varna police case banta hai ispe!",
+            "gareebi hatao yojana ka brand ambassador ban ja tu ab.",
+            "bhai/behen maaf kar de, ab toh ATM bhi tujhe dekh ke error dikha deta hai.",
+            "kya karega itna paisa bacha ke? Kabr mein leke jayega kya?",
+            "Agli baar tu hi sponsor karega pura trip, likh ke lele!"
+        ];
+        const selectedRoast = roastLines[Math.floor(Math.random() * roastLines.length)];
+
+        // 3. Round numbers BEFORE sending to AI (Clean Integers)
+        const roundedTotalVar = Math.round(results.totalVariable);
+        const roundedTotalFixed = Math.round(results.totalFixed);
+        const roundedBalances = results.balances.map(m => 
+            `${m.name}: Net Balance ${Math.round(m.netBalance)}`
+        ).join(', ');
+
+        const prompt = `
+        Analyze these expenses for group "${roomName}".
+        Total Variable Cost: ₹${roundedTotalVar}
+        Total Fixed Cost: ₹${roundedTotalFixed}
         Breakdown:
-        ${results.balances.map(m => `${m.name}: Net Balance ${m.netBalance}`).join(', ')}
+        ${roundedBalances}
         
-        Provide a fun, modern, 3-bullet summary suitable for a Gen-Z/Millennial Indian user.
-        1. Identify the "Big Spender" 💸.
-        2. Identify the "Savings King/Queen" 👑.
-        3. A general observation about the group's spending style.
+        Provide a fun, "roast-style" 3-bullet summary in **Hinglish** for a Gen Z Indian group.
         
-        IMPORTANT: 
+        1. Identify the **"${selectedRichName} of the Group"** 🤑 (Highest spender/creditor). 
+           - **GENDER CHECK:** If female, use "Queen ${selectedRichName}" or "Madam". If male, use "Bhai" or "Sir".
+           - Roast them gently about being rich.
+        
+        2. Identify the **"Kanjoos Makkhichoos"** 🐜 (Lowest spender/debtor). 
+           - **GENDER CHECK:** If female, use "Didi". If male, use "Bhai".
+           - Roast them BADLY for not spending money.
+
+        3. **Vibe Check** 🧐: A funny, unhinged observation. 
+           - **MANDATORY:** You MUST include this specific roast phrase naturally in the sentence: **"${selectedRoast}"** (Adjust 'bhai/behen' in the phrase based on context).
+        
+        STRICT OUTPUT RULES:
+        - **Round ALL numbers**. No decimals allowed.
+        - **Start DIRECTLY** with the first emoji. Do NOT say "Here is a roast".
         - Use Indian Rupee symbol (₹). 
-        - Do NOT use markdown bolding (like **text**). 
-        - Use emojis liberally. 
-        - Be witty and casual.`;
+        `;
         
         try {
             const text = await callGemini(prompt);
             setInsights(cleanText(text));
         } catch (e) {
-            setInsights("Could not generate insights.");
+            setInsights("Insights generate nahi ho paaye. Server lunch pe gaya hai! 🍕");
         } finally {
             setIsGeneratingInsights(false);
         }
     };
+
+
 
     const copyToClipboard = () => { safeCopy(draftedMessage); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); };
     const copyGroupCode = () => { safeCopy(groupId); setCopyCodeSuccess(true); setTimeout(() => setCopyCodeSuccess(false), 2000); };
