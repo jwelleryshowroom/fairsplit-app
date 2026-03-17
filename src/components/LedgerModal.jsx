@@ -110,7 +110,6 @@ const globalStyles = `
 // ---------------------------------------------------------------------------
 const MiniGauge = ({ value, max, colorHex, label, icon, caption }) => {
     const pct = Math.min((value / (max || 1)) * 100, 100);
-    // Arc: viewBox 0 0 80 60 — arc at y=44, leaves ~16px of room below for the amount text
     const r = 36;
     const cx = 40, cy = 44;
     const circumference = Math.PI * r;
@@ -119,20 +118,17 @@ const MiniGauge = ({ value, max, colorHex, label, icon, caption }) => {
     const color = colorHex || '#3b82f6';
 
     return (
-        <div className="flex flex-col items-center justify-center p-4 bg-white/[0.02] rounded-3xl border border-white/[0.05]">
-            <div className="flex items-center gap-1.5 mb-2">
-                {icon && <span className="text-slate-400">{icon}</span>}
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+        <div className="flex flex-col items-center justify-center p-3 sm:p-4 bg-white/[0.02] rounded-2xl sm:rounded-3xl border border-white/[0.05]">
+            <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2 text-slate-400">
+                {icon && <span className="text-slate-500 sm:text-slate-400">{icon}</span>}
+                <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-widest">{label}</span>
             </div>
-            {/* Arc + Amount in a single block; viewBox extends to 60px tall to hold amount text below arc */}
-            <div className="relative w-28 h-16">
+            <div className="relative w-20 h-12 sm:w-28 sm:h-16">
                 <svg viewBox="0 0 80 60" className="w-full h-full">
-                    {/* Track */}
                     <path
                         d={`M${cx - r},${cy} A${r},${r} 0 0,1 ${cx + r},${cy}`}
                         fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" strokeLinecap="round"
                     />
-                    {/* Value arc */}
                     <path
                         d={`M${cx - r},${cy} A${r},${r} 0 0,1 ${cx + r},${cy}`}
                         fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
@@ -140,13 +136,12 @@ const MiniGauge = ({ value, max, colorHex, label, icon, caption }) => {
                         strokeDashoffset={strokeOffset}
                         style={{ transition: 'stroke-dashoffset 1s ease', filter: `drop-shadow(0 0 4px ${color}88)` }}
                     />
-                    {/* Amount text centered below arc, inside SVG at y=58 */}
                     <text
                         x="40" y="58"
                         textAnchor="middle"
                         fill="white"
                         fontWeight="900"
-                        fontSize="13"
+                        fontSize="14"
                         fontFamily="inherit"
                         style={{ letterSpacing: '-0.02em' }}
                     >
@@ -154,241 +149,221 @@ const MiniGauge = ({ value, max, colorHex, label, icon, caption }) => {
                     </text>
                 </svg>
             </div>
-            {caption && <p className="text-[9px] text-slate-600 font-medium mt-1">{caption}</p>}
+            {caption && <p className="text-[8px] sm:text-[9px] text-slate-500 sm:text-slate-600 font-medium mt-1">{caption}</p>}
+        </div>
+    );
+};
+// ---------------------------------------------------------------------------
+// 4. Shared Detail Content (Reused in Inline & Modal)
+// ---------------------------------------------------------------------------
+const NodeDetailContent = ({
+    isNormal, totalVar, grandTotal, totalCustom, totalArrearsIn, totalFixed,
+    error, loading, snapshots, retry, onSelectMember, selectedMemberId, niceDate
+}) => {
+    return (
+        <div className="min-h-0 overflow-hidden">
+            {/* Divider */}
+            <div className="h-px bg-white/[0.04] mb-6"></div>
+
+            {/* Internal Stats (Gauges) — Mode Aware */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-8">
+                {isNormal ? (
+                    <>
+                        <MiniGauge value={totalVar} max={grandTotal || totalVar} colorHex="#6366f1" label="Expense" icon={<BarChart3 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />} caption="Shared pool" />
+                        <MiniGauge value={totalCustom} max={grandTotal || totalCustom || 1} colorHex="#f97316" label="Side Exp" icon={<UtensilsCrossed className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />} caption="Custom splits" />
+                        <div className="col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white/[0.02] rounded-2xl sm:rounded-3xl border border-white/[0.05]">
+                            <div className="flex items-center gap-1.5 mb-1.5 sm:mb-3 text-slate-400">
+                                <Wallet className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                                <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-widest">Prev Balance</span>
+                            </div>
+                            <span className={`text-base sm:text-2xl font-black ${totalArrearsIn > 0 ? 'text-amber-400' : 'text-white'}`}>{totalArrearsIn > 0 ? '+' : ''}₹{totalArrearsIn.toLocaleString('en-IN')}</span>
+                            <p className="text-[8px] sm:text-[9px] text-slate-500 sm:text-slate-600 mt-1">Carried in</p>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <MiniGauge value={totalVar} max={grandTotal || totalVar} colorHex="#3b82f6" label="Variable" icon={<Activity className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />} caption="Weighted" />
+                        <MiniGauge value={totalFixed} max={grandTotal || totalFixed || 1} colorHex="#f43f5e" label="Fixed" icon={<Receipt className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />} caption="Equal split" />
+                        <div className="col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-3 sm:p-4 bg-white/[0.02] rounded-2xl sm:rounded-3xl border border-white/[0.05]">
+                            <div className="flex items-center gap-1.5 mb-1.5 sm:mb-3 text-slate-400">
+                                <Wallet className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                                <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-widest">Arrears In</span>
+                            </div>
+                            <span className={`text-base sm:text-2xl font-black ${totalArrearsIn > 0 ? 'text-amber-400' : 'text-white'}`}>{totalArrearsIn > 0 ? '+' : ''}₹{totalArrearsIn.toLocaleString('en-IN')}</span>
+                            <p className="text-[8px] sm:text-[9px] text-slate-500 sm:text-slate-600 mt-1">Previous debts</p>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Member Cards grid */}
+            {error ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                    <p className="text-slate-500 text-sm">{error}</p>
+                    <button onClick={(e) => { e.stopPropagation(); retry(); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-colors">Retry</button>
+                </div>
+            ) : loading || !snapshots ? (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-1">
+                    {[0, 1, 2, 3].map(i => (
+                        <div key={i} className="bg-[#111622] rounded-[1.5rem] p-5 border border-white/[0.03] flex items-center justify-between animate-pulse">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-slate-800"></div>
+                                <div className="space-y-2"><div className="h-3.5 w-24 bg-slate-700 rounded-full"></div><div className="h-2 w-16 bg-slate-800 rounded-full"></div></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-1">
+                    {(snapshots || []).map(s => {
+                        const isMonthlyCard = !isNormal;
+                        const totalDaysPresent = snapshots.reduce((acc, curr) => acc + (curr.daysPresent || 0), 0) || 1;
+                        const memberCount = snapshots.length || 1;
+                        const fixedShare = totalFixed / memberCount;
+                        const varShare = isMonthlyCard ? (totalVar / totalDaysPresent) * (s.daysPresent || 0) : totalVar / memberCount;
+                        const paidAmount = (s.variableExpense || 0) + (s.fixedExpense || 0);
+                        const varPercent = Math.min((varShare / (varShare + fixedShare || 1)) * 100, 100);
+                        const fixedPercent = 100 - varPercent;
+                        const isSelected = selectedMemberId === s.memberId;
+
+                        return (
+                            <div
+                                key={s.memberId}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSelectMember({ ...s, calcDetails: { varShare, fixedShare, paidAmount } }, niceDate, isNormal ? 'normal' : 'monthly');
+                                }}
+                                className={`bg-[#111622] rounded-[1.5rem] p-5 border flex items-center justify-between group/card hover:bg-[#151b29] transition-all duration-500 cursor-pointer relative overflow-hidden ${isSelected ? 'border-rose-500/50 shadow-[0_0_30px_rgba(244,68,68,0.2)] z-20 scale-[1.02]' : 'border-white/[0.03]'}`}
+                            >
+                                <div className="absolute inset-0 bg-blue-500/[0.02] opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
+                                <div className="flex items-center gap-3 relative z-10 min-w-0">
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-sm border border-slate-700 overflow-hidden shrink-0">
+                                        {s.photoURL ? <img src={s.photoURL} alt={s.memberName} className="w-full h-full object-cover" /> : s.memberName.charAt(0)}
+                                    </div>
+                                    <div className="flex flex-col justify-center min-w-0">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <h4 className="font-bold text-white text-sm truncate">{s.memberName}</h4>
+                                            <Info className="w-3 h-3 shrink-0 text-slate-600" />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            {isMonthlyCard ? (
+                                                <div className="flex items-center gap-1 w-24">
+                                                    <div className="h-1 rounded-full bg-blue-500/20 flex-1 overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${varPercent}%` }}></div></div>
+                                                </div>
+                                            ) : (
+                                                <div className="h-1 w-16 rounded-full bg-white/10 overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: '60%' }}></div></div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end relative z-10 shrink-0">
+                                    <div className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 ${s.netBalance >= 0.5 ? 'bg-emerald-500/10 text-emerald-400' : s.netBalance <= -0.5 ? 'bg-rose-500/10 text-rose-400' : 'bg-white/5 text-slate-400'}`}>
+                                        ₹{Math.abs(s.netBalance).toFixed(0)} {s.netBalance >= 0.5 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ---------------------------------------------------------------------------
+// 5. Month Pop-out Modal (Mobile)
+// ---------------------------------------------------------------------------
+const MonthDetailModal = ({ isOpen, onClose, archive, groupId, onSelectMember, selectedMemberId }) => {
+    if (!isOpen || !archive) return null;
+    return (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-mesh-dark animate-in slide-in-from-bottom duration-500">
+            <div className="p-6 flex items-center justify-between glass-nav border-b border-white/[0.05]">
+                <div>
+                    <h3 className="text-xl font-black text-white">{archive.name || 'Details'}</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        {archive.closedAt ? new Date(archive.closedAt).toLocaleDateString().toUpperCase() : ''}
+                    </p>
+                </div>
+                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 pb-20">
+                <LedgerNodeContent archive={archive} groupId={groupId} onSelectMember={onSelectMember} selectedMemberId={selectedMemberId} isExpandedInitially={true} />
+            </div>
+        </div>
+    );
+};
+
+// Helper to wrap LedgerNode's content logic
+const LedgerNodeContent = ({ archive, groupId, onSelectMember, selectedMemberId, isExpandedInitially = false }) => {
+    const nodeRef = React.useRef(null);
+    const { snapshots, loading, error, retry } = useMemberSnapshots(groupId, archive?.id, nodeRef);
+    if (!archive) return null;
+    const isNormal = archive.mode === 'normal';
+    const totalVar = Number(archive.totalVariable ?? archive.results?.totalVariable ?? 0) || 0;
+    const totalFixed = Number(archive.totalFixed ?? archive.results?.totalFixed ?? 0) || 0;
+    const totalCustom = Number(archive.totalCustom ?? archive.results?.totalCustom ?? 0) || 0;
+    const grandTotal = isNormal ? totalVar + totalCustom : totalVar + totalFixed;
+    const totalArrearsIn = snapshots?.reduce((s, snap) => s + Math.max(snap.arrearsCarriedIn || 0, 0), 0) ?? 0;
+    const dateStr = archive.closedAt || archive.date;
+    const niceDate = dateStr ? new Date(dateStr).toLocaleDateString().toUpperCase() : 'UNKNOWN';
+
+    return (
+        <div ref={nodeRef}>
+            <NodeDetailContent
+                isNormal={isNormal} totalVar={totalVar} grandTotal={grandTotal} totalCustom={totalCustom}
+                totalArrearsIn={totalArrearsIn} totalFixed={totalFixed} error={error} loading={loading}
+                snapshots={snapshots} retry={retry} onSelectMember={onSelectMember} selectedMemberId={selectedMemberId} niceDate={niceDate}
+            />
         </div>
     );
 };
 
 
 
-// ---------------------------------------------------------------------------
-// 4. Ledger Node (Timeline View)
-// ---------------------------------------------------------------------------
-const LedgerNode = ({ archive, groupId, onSelectMember, selectedMemberId }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const nodeRef = React.useRef(null);
-    const { snapshots, loading, error, retry } = useMemberSnapshots(groupId, archive?.id, nodeRef);
-
-    // Guard after hooks (hooks must always run unconditionally)
-    if (!archive || !archive.id) return null;
-
-    const dateStr = archive.closedAt || archive.date;
-    const dateObj = dateStr ? new Date(dateStr) : null;
-    const niceDate = dateObj && !isNaN(dateObj)
-        ? dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()
-        : 'UNKNOWN DATE';
-
+const LedgerNode = ({ archive, groupId, onSelectMember, selectedMemberId, isExpanded, onToggle }) => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const isNormal = archive.mode === 'normal';
     const totalVar = Number(archive.totalVariable ?? archive.results?.totalVariable ?? 0) || 0;
     const totalFixed = Number(archive.totalFixed ?? archive.results?.totalFixed ?? 0) || 0;
     const totalCustom = Number(archive.totalCustom ?? archive.results?.totalCustom ?? 0) || 0;
-    const isNormal = archive.mode === 'normal';
     const grandTotal = isNormal ? totalVar + totalCustom : totalVar + totalFixed;
-    const totalArrearsIn = snapshots?.reduce((s, snap) => s + Math.max(snap.arrearsCarriedIn || 0, 0), 0) ?? 0;
-
+    const dateStr = archive.closedAt || archive.date;
+    const niceDate = dateStr ? new Date(dateStr).toLocaleDateString().toUpperCase() : 'UNKNOWN';
 
     return (
-        <div ref={nodeRef} className="relative flex gap-6 mb-8 timeline-node">
-            {/* Timeline Axis & Dot */}
-            <div className="timeline-line relative z-10 flex flex-col items-center">
+        <div className="relative flex gap-3 sm:gap-8 mb-4 sm:mb-12 timeline-node">
+            <div className="timeline-line relative z-10 flex-col items-center hidden sm:flex">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-xl shadow-[0_0_20px_rgba(59,130,246,0.2)] border-2 transition-all duration-500 ${isExpanded ? 'bg-blue-600 border-blue-400 text-white' : 'bg-[#151a26] border-slate-700 text-slate-300'}`}>
                     {archive.name ? archive.name.charAt(0).toUpperCase() : 'M'}
                 </div>
             </div>
 
-            {/* Content Card — ALWAYS overflow-hidden so glass never bleeds */}
-            <div className={`flex-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded ? 'scale-[1.01]' : 'hover:translate-x-1'}`}>
+            <div className={`flex-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isExpanded && !isMobile ? 'scale-[1.01]' : ''}`}>
                 <div
-                    className="glass-card rounded-[2rem] overflow-hidden cursor-pointer relative group transition-all duration-500"
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={`glass-card rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden cursor-pointer relative group transition-all duration-500 ${isExpanded && !isMobile ? 'ring-2 ring-blue-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)]' : ''}`}
+                    onClick={() => onToggle(archive.id || archive.docId)}
                 >
-                    {/* Hover glow */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-
-                    {/* Header row — always visible */}
-                    <div className="p-6 flex items-center justify-between relative z-10">
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <h3 className="font-extrabold text-white text-xl tracking-tight">{archive.name || 'Unnamed Entry'}</h3>
-                                <div className="flex gap-2">
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border ${archive.mode === 'normal'
-                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                        }`}>
-                                        {archive.mode === 'normal' ? 'Normal' : 'Monthly'}
-                                    </span>
-                                    <span className="bg-white/5 text-slate-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border border-white/10">
-                                        Settled
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="text-[10px] font-black text-slate-500 tracking-[0.2em]">{niceDate}</div>
+                    <div className="p-4 sm:p-8 flex items-center justify-between relative z-10">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="font-bold sm:font-black text-white text-base sm:text-2xl tracking-tight truncate">{archive.name || 'Unnamed'}</h3>
+                            <div className="text-[8px] sm:text-[11px] font-black text-slate-500 tracking-[0.2em] uppercase mt-1 opacity-70">{niceDate}</div>
                         </div>
-
-                        <div className="flex items-center gap-6">
-                            {!isExpanded && (
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Grand Total</p>
-                                    <p className="font-black text-white text-xl">₹{grandTotal.toLocaleString('en-IN')}</p>
-                                </div>
-                            )}
-                            <div className={`w-10 h-10 rounded-full bg-white/[0.05] flex items-center justify-center transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-white/[0.1]' : ''}`}>
-                                <ChevronDown className="w-5 h-5 text-slate-400" />
+                        <div className="flex items-center gap-4 sm:gap-10 ml-2">
+                            <div className="text-right">
+                                <p className="font-black text-white text-sm sm:text-3xl tracking-tighter">₹{grandTotal.toLocaleString('en-IN')}</p>
+                                <p className="hidden sm:block text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Total Archive</p>
+                            </div>
+                            <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-white/[0.05] border border-white/[0.05] flex items-center justify-center transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-blue-500/20 border-blue-500/30' : ''}`}>
+                                <ChevronDown className={`w-4 h-4 sm:w-6 sm:h-6 transition-colors ${isExpanded ? 'text-blue-400' : 'text-slate-400'}`} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Expandable body — grid-rows animation, still inside overflow-hidden card */}
-                    <div
-                        className="grid transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                        style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
-                    >
-                        <div className="min-h-0 overflow-hidden">
-                            <div className={`px-6 pb-6 transition-opacity duration-500 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
-
-                                {/* Divider */}
-                                <div className="h-px bg-white/[0.04] mb-6"></div>
-
-                                {/* Internal Stats (Gauges) — Mode Aware */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                    {isNormal ? (
-                                        <>
-                                            <MiniGauge value={totalVar} max={grandTotal || totalVar} colorHex="#6366f1" label="Expense Total" icon={<BarChart3 className="w-3.5 h-3.5" />} caption="Shared pool split equally" />
-                                            <MiniGauge value={totalCustom} max={grandTotal || totalCustom || 1} colorHex="#f97316" label="Side Expenses" icon={<UtensilsCrossed className="w-3.5 h-3.5" />} caption="Custom & individual splits" />
-                                            <div className="flex flex-col items-center justify-center p-4 bg-white/[0.02] rounded-3xl border border-white/[0.05]">
-                                                <div className="flex items-center gap-1.5 mb-3"><Wallet className="w-3.5 h-3.5 text-slate-400" /><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Prev Balance</span></div>
-                                                <span className={`text-2xl font-black ${totalArrearsIn > 0 ? 'text-amber-400' : 'text-white'}`}>{totalArrearsIn > 0 ? '+' : ''}₹{totalArrearsIn.toLocaleString('en-IN')}</span>
-                                                <p className="text-[9px] text-slate-600 mt-1">Carried into this split</p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <MiniGauge value={totalVar} max={grandTotal || totalVar} colorHex="#3b82f6" label="Variable Total" icon={<Activity className="w-3.5 h-3.5" />} caption="Attendance-weighted" />
-                                            <MiniGauge value={totalFixed} max={grandTotal || totalFixed || 1} colorHex="#f43f5e" label="Fixed Bills" icon={<Receipt className="w-3.5 h-3.5" />} caption="Equal group split" />
-                                            <div className="flex flex-col items-center justify-center p-4 bg-white/[0.02] rounded-3xl border border-white/[0.05]">
-                                                <div className="flex items-center gap-1.5 mb-3"><Wallet className="w-3.5 h-3.5 text-slate-400" /><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Arrears In</span></div>
-                                                <span className={`text-2xl font-black ${totalArrearsIn > 0 ? 'text-amber-400' : 'text-white'}`}>{totalArrearsIn > 0 ? '+' : ''}₹{totalArrearsIn.toLocaleString('en-IN')}</span>
-                                                <p className="text-[9px] text-slate-600 mt-1">Previous month debts</p>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Member Cards grid */}
-                                {error ? (
-                                    /* Error state with retry */
-                                    <div className="flex flex-col items-center justify-center py-10 gap-3">
-                                        <p className="text-slate-500 text-sm">{error}</p>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); retry(); }}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-colors"
-                                        >
-                                            Retry
-                                        </button>
-                                    </div>
-                                ) : loading || !snapshots ? (
-                                    /* Skeleton shimmer cards */
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-1">
-                                        {[0, 1, 2, 3].map(i => (
-                                            <div key={i} className="bg-[#111622] rounded-[1.5rem] p-5 border border-white/[0.03] flex items-center justify-between animate-pulse">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full bg-slate-800"></div>
-                                                    <div className="space-y-2">
-                                                        <div className="h-3.5 w-24 bg-slate-700 rounded-full"></div>
-                                                        <div className="h-2 w-16 bg-slate-800 rounded-full"></div>
-                                                        <div className="h-1.5 w-28 bg-slate-800/60 rounded-full"></div>
-                                                    </div>
-                                                </div>
-                                                <div className="h-8 w-20 bg-slate-800 rounded-xl"></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    /* Real member cards */
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-1">
-                                        {(snapshots || []).map(s => {
-                                            const isMonthlyCard = !isNormal;
-                                            const totalDaysPresent = snapshots.reduce((acc, curr) => acc + (curr.daysPresent || 0), 0) || 1;
-                                            const memberCount = snapshots.length || 1;
-                                            const fixedShare = totalFixed / memberCount;
-                                            const varShare = isMonthlyCard
-                                                ? (totalVar / totalDaysPresent) * (s.daysPresent || 0)
-                                                : totalVar / memberCount;
-                                            const paidAmount = (s.variableExpense || 0) + (s.fixedExpense || 0);
-                                            const customShare = paidAmount + (s.arrearsCarriedIn || 0) - varShare - fixedShare - (s.netBalance || 0);
-                                            const varPercent = Math.min((varShare / (varShare + fixedShare || 1)) * 100, 100);
-                                            const fixedPercent = 100 - varPercent;
-                                            const isSelected = selectedMemberId === s.memberId;
-
-                                            return (
-                                                <div
-                                                    key={s.memberId}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onSelectMember({ ...s, calcDetails: { varShare, fixedShare, customShare, paidAmount } }, niceDate, archive.mode);
-                                                    }}
-                                                    className={`bg-[#111622] rounded-[1.5rem] p-5 border flex items-center justify-between group/card hover:bg-[#151b29] transition-all duration-500 cursor-pointer relative overflow-hidden ${isSelected ? 'border-rose-500/50 shadow-[0_0_30px_rgba(244,68,68,0.2)] z-20 scale-[1.02]' : 'border-white/[0.03]'
-                                                        }`}
-                                                    style={isSelected ? { opacity: 1, filter: 'none' } : {}}
-                                                >
-                                                    <div className="absolute inset-0 bg-blue-500/[0.02] opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
-
-                                                    <div className="flex items-center gap-4 relative z-10">
-                                                        <div className="w-12 h-12 rounded-full bg-slate-800 text-slate-300 font-black flex items-center justify-center text-lg border border-slate-700 overflow-hidden">
-                                                            {s.photoURL ? <img src={s.photoURL} alt={s.memberName} className="w-full h-full object-cover" /> : s.memberName.charAt(0)}
-                                                        </div>
-                                                        <div className="flex flex-col justify-center min-w-0">
-                                                            <div className="flex items-center gap-1.5 mb-0.5">
-                                                                <h4 className="font-bold text-white text-base truncate">{s.memberName}</h4>
-                                                                <Info className="w-3 h-3 shrink-0 text-slate-600 group-hover/card:text-blue-400 transition-colors" />
-                                                            </div>
-                                                            {isMonthlyCard && (
-                                                                <p className="text-[11px] text-slate-500 font-medium mb-1.5">{s.daysPresent || 0} Days Present</p>
-                                                            )}
-                                                            <div className="flex items-center gap-1.5 opacity-70 group-hover/card:opacity-100 transition-opacity mt-1">
-                                                                {isMonthlyCard ? (
-                                                                    <>
-                                                                        <div className="flex items-center gap-1 w-20">
-                                                                            <span className="text-[8px] font-black text-blue-400 tracking-wider">VAR</span>
-                                                                            <div className="h-1.5 rounded-full bg-blue-500/20 flex-1 overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${varPercent}%` }}></div></div>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1 w-20">
-                                                                            <span className="text-[8px] font-black text-rose-400 tracking-wider">FIX</span>
-                                                                            <div className="h-1.5 rounded-full bg-rose-500/20 flex-1 overflow-hidden"><div className="h-full bg-rose-500" style={{ width: `${fixedPercent}%` }}></div></div>
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="flex items-center gap-1 w-32">
-                                                                        <span className="text-[8px] font-black text-indigo-400 tracking-wider">EXP</span>
-                                                                        <div className="h-1.5 rounded-full bg-indigo-500/20 flex-1 overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${Math.min((paidAmount / ((grandTotal / memberCount) || 1)) * 100, 100)}%` }}></div></div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-col items-end relative z-10">
-                                                        <div className={`px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 mb-1 ${s.netBalance >= 0.5 ? 'bg-[#064e3b]/40 text-[#34d399] border border-[#34d399]/20' :
-                                                            s.netBalance <= -0.5 ? 'bg-[#7f1d1d]/40 text-[#f87171] border border-[#f87171]/20' :
-                                                                'bg-white/[0.05] text-slate-400 border border-white/[0.1]'
-                                                            }`}>
-                                                            {s.netBalance >= 0.5 ? (<>Get ₹{s.netBalance.toFixed(0)} <ArrowUpRight className="w-4 h-4" /></>) :
-                                                                s.netBalance <= -0.5 ? (<>Pay ₹{Math.abs(s.netBalance).toFixed(0)} <ArrowDownLeft className="w-4 h-4" /></>) :
-                                                                    'Cleared'}
-                                                        </div>
-                                                        <div className="text-[10px] font-medium text-slate-500">
-                                                            Paid ₹{((s.variableExpense || 0) + (s.fixedExpense || 0)).toFixed(0)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                            </div>
+                    {!isMobile && isExpanded && (
+                        <div className="px-8 pb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+                           <LedgerNodeContent archive={archive} groupId={groupId} onSelectMember={onSelectMember} selectedMemberId={selectedMemberId} />
                         </div>
-                    </div>
-
+                    )}
                 </div>
             </div>
         </div>
@@ -570,15 +545,18 @@ const MemberDetailDrawer = ({ isOpen, member, onClose }) => {
 const LedgerModal = ({ isOpen, onClose, archives, groupId }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [expandedMonthId, setExpandedMonthId] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const PAGE_SIZE = 5;
 
     if (!isOpen) return null;
 
-    const totalMonths = archives?.length ?? 0;
-    const totalVariable = archives?.reduce((s, a) => s + (a.totalVariable || 0), 0) ?? 0;
-    const totalFixed = archives?.reduce((s, a) => s + (a.totalFixed || 0), 0) ?? 0;
-    const totalSpend = totalVariable + totalFixed;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const expandedMonth = archives?.find(a => (a.id || a.docId) === expandedMonthId);
+
+    const handleToggleMonth = (id) => {
+        setExpandedMonthId(prev => (prev === id ? null : id));
+    };
 
     const handleSelectMember = (member, date, mode) => {
         setSelectedMember({ ...member, date, mode });
@@ -592,6 +570,11 @@ const LedgerModal = ({ isOpen, onClose, archives, groupId }) => {
         .sort((a, b) => new Date(b.closedAt || b.date) - new Date(a.closedAt || a.date));
     const totalPages = Math.ceil(sortedArchives.length / PAGE_SIZE);
     const pageArchives = sortedArchives.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+    const totalMonths = archives?.length ?? 0;
+    const totalVariable = archives?.reduce((s, a) => s + (a.totalVariable || 0), 0) ?? 0;
+    const totalFixed = archives?.reduce((s, a) => s + (a.totalFixed || 0), 0) ?? 0;
+    const totalSpend = totalVariable + totalFixed;
 
 
     return (
@@ -758,8 +741,22 @@ const LedgerModal = ({ isOpen, onClose, archives, groupId }) => {
                                             groupId={groupId}
                                             onSelectMember={handleSelectMember}
                                             selectedMemberId={selectedMember?.memberId}
+                                            isExpanded={expandedMonthId === archive.id}
+                                            onToggle={handleToggleMonth}
                                         />
                                     ))}
+
+                                    {/* Mobile Month Details Pop-out */}
+                                    {isMobile && (
+                                        <MonthDetailModal
+                                            isOpen={!!expandedMonthId}
+                                            onClose={() => setExpandedMonthId(null)}
+                                            archive={expandedMonth}
+                                            groupId={groupId}
+                                            onSelectMember={handleSelectMember}
+                                            selectedMemberId={selectedMember?.memberId}
+                                        />
+                                    )}
 
                                     {/* Pagination Controls */}
                                     {totalPages > 1 && (

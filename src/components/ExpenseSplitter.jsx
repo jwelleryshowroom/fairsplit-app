@@ -17,6 +17,7 @@ import MembersGrid from './MembersGrid';
 import SettlementPlan from './SettlementPlan';
 import ExpenseManagerModals from './ExpenseManagerModals';
 import FloatingDock from './FloatingDock';
+import SettingsDrawer from './SettingsDrawer';
 
 const pulseAnimation = `
   @keyframes pulse {
@@ -29,15 +30,6 @@ const pulseAnimation = `
 const shimmerAnimation = `
   @keyframes shimmer {
     100% { transform: translateX(200%); }
-  }
-  @keyframes rgbGlow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  .rgb-border {
-     background: linear-gradient(90deg, #ff007f, #7f00ff, #00d4ff, #4ade80, #ff007f);
-     background-size: 300% 300%;
-     animation: rgbGlow 4s ease infinite;
   }
 `;
 
@@ -55,7 +47,8 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const [showActivityFeed, setShowActivityFeed] = useState(false);
     const [isCustomSplitModalOpen, setIsCustomSplitModalOpen] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', type: 'warning', hideCancel: false, onConfirm: () => { } });
-    
+    const [showSettings, setShowSettings] = useState(false);
+
     // Dev Console
     const [devMode, setDevMode] = useState(false);
     const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
@@ -79,6 +72,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
 
     const [insights, setInsights] = useState('');
     const [isInsightsMinimized, setIsInsightsMinimized] = useState(false);
+    const [mobileTab, setMobileTab] = useState('members');
 
     const {
         showParseModal, setShowParseModal, activeMemberId, openSmartAddModal,
@@ -130,7 +124,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
         }
         const updatedMembers = members.map(m => m.id.toString() === id.toString() ? { ...m, [f]: v } : m);
         setMembers(updatedMembers);
-        
+
         let updatedSplits = [...customSplits];
         if (f === 'name' && v.trim() !== '') {
             const newName = v.trim().toLowerCase();
@@ -186,7 +180,16 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     return (
         <div className="min-h-screen font-sans relative overflow-x-hidden" style={{ backgroundColor: '#F3F4F6' }}>
             <style>{pulseAnimation}{shimmerAnimation}</style>
-            
+
+            {/* Settings Drawer - rendered at root level to escape backdrop-filter stacking context */}
+            <SettingsDrawer
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+                onLeaveGroup={onLeaveGroup}
+                onShowHelp={() => { setShowSettings(false); setShowOnboarding(true); }}
+                user={user}
+            />
+
             {/* Mesh Background */}
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-300/30 rounded-full blur-[100px] mix-blend-multiply animate-pulse duration-[10000ms]" />
@@ -214,6 +217,8 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 copyGroupCode={copyGroupCode} copyCodeSuccess={copyCodeSuccess}
                 devMode={devMode} setDevMode={setDevMode}
                 setShowActivityFeed={setShowActivityFeed} setShowLedger={setShowLedger} setShowOnboarding={setShowOnboarding}
+                onOpenSettings={() => setShowSettings(true)}
+                user={user}
             />
 
             <div className="relative z-10 w-full max-w-[1400px] mx-auto p-4 md:p-8 pb-32 md:pb-40">
@@ -235,21 +240,30 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 )}
 
                 {(!results || isModifying) && pendingDebts.length > 0 && (
-                    <div className="mb-6 px-6 py-5 bg-orange-50/80 backdrop-blur-xl border border-orange-200/50 rounded-[2rem] shadow-sm animate-in slide-in-from-top-4 flex items-center gap-5">
-                        <h3 className="text-xs font-black text-orange-800 flex items-center gap-2 uppercase tracking-[0.2em] flex-shrink-0"><AlertCircle className="w-4 h-4" /> Pending Debts</h3>
-                        <div className="flex gap-3 flex-1 overflow-x-auto pb-2 -mb-2 no-scrollbar">
+                    <div className="mb-6 px-3 sm:px-6 py-3.5 sm:py-5 bg-orange-50/80 backdrop-blur-xl border border-orange-200/50 rounded-[1.25rem] sm:rounded-[2rem] shadow-sm animate-in slide-in-from-top-4 flex items-center gap-2.5 sm:gap-5 overflow-hidden">
+                        {/* Label: Text on Laptop, Icon only on Mobile */}
+                        <h3 className="hidden sm:flex text-xs font-black text-orange-800 items-center gap-2 uppercase tracking-[0.2em] flex-shrink-0">
+                            <AlertCircle className="w-4 h-4" /> Pending Debts
+                        </h3>
+                        <div className="sm:hidden flex items-center justify-center w-8 h-8 bg-white/60 rounded-xl border border-orange-100 shadow-sm flex-shrink-0">
+                            <AlertCircle className="w-4 h-4 text-orange-800" />
+                        </div>
+
+                        <div className="flex gap-2 sm:gap-3 flex-1 overflow-x-auto pb-1 -mb-1 no-scrollbar">
                             {pendingDebts.map((tx, idx) => (
-                                <div key={idx} className="bg-white/90 p-3 px-4 rounded-2xl shadow-sm border border-orange-100 flex items-center justify-between min-w-[260px] flex-shrink-0 group overflow-hidden">
-                                    <div className="text-xs font-bold whitespace-nowrap"><span className="text-slate-800">{tx.from}</span> <span className="text-slate-400">owes {tx.to}</span></div>
-                                    
-                                    <div className="flex items-center gap-0 pl-3 ml-auto">
-                                        <div className="font-mono font-black text-orange-600 text-sm group-hover:-translate-x-1 group-hover:scale-95 transition-all duration-300">₹{tx.amount}</div>
+                                <div key={idx} className="bg-white/95 p-2 sm:p-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl shadow-sm border border-orange-100 flex items-center justify-between min-w-[180px] sm:min-w-[260px] flex-shrink-0 group overflow-hidden transition-all">
+                                    <div className="text-[10px] sm:text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis">
+                                        <span className="text-slate-800">{tx.from}</span> <span className="text-slate-400 font-medium">owes</span> <span className="text-slate-600">{tx.to}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-4 ml-auto">
+                                        <div className="font-mono font-black text-orange-600 text-xs sm:text-sm group-hover:-translate-x-1 transition-transform">₹{tx.amount}</div>
                                         <button
                                             onClick={() => handleUnifiedSettle(tx)}
-                                            className="opacity-0 group-hover:opacity-100 w-0 group-hover:w-7 h-7 overflow-hidden ml-0 group-hover:ml-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm flex-shrink-0"
+                                            className="opacity-0 sm:opacity-0 group-hover:opacity-100 w-0 group-hover:w-6 sm:group-hover:w-7 h-6 sm:h-7 overflow-hidden ml-0 group-hover:ml-1 sm:group-hover:ml-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center justify-center transition-all duration-300 shadow-sm flex-shrink-0"
                                             title="Settle this debt instantly"
                                         >
-                                            <Check className="w-4 h-4 flex-shrink-0" />
+                                            <Check className="w-3 sm:w-4 h-3 sm:h-4 flex-shrink-0" />
                                         </button>
                                     </div>
                                 </div>
@@ -257,16 +271,49 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                         </div>
                     </div>
                 )}
+                {/* Mobile Tab Segmented Control */}
+                <div className="lg:hidden flex bg-white/60 backdrop-blur-xl p-1.5 rounded-[1.25rem] mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/40 mx-auto max-w-sm sticky top-4 z-40">
+                    <button
+                        onClick={() => setMobileTab('members')}
+                        className={`flex-1 py-3 px-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${mobileTab === 'members' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
+                    >
+                        Members Setup
+                    </button>
+                    <button
+                        onClick={() => setMobileTab('overview')}
+                        className={`flex-1 py-3 px-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${mobileTab === 'overview' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
+                    >
+                        Bill Overview
+                    </button>
+                </div>
 
                 <div className={`grid lg:grid-cols-12 gap-6 lg:gap-8 transition-all duration-500 ${isSettled ? 'grayscale-[0.3]' : ''}`}>
-                    <ResultsDashboard
-                        results={results} isModifying={isModifying} isSettled={isSettled}
-                        isMonthlyMode={isMonthlyMode} setIsMonthlyMode={setIsMonthlyMode}
-                        daysInMonth={daysInMonth} updateDays={updateDays} pendingDebts={pendingDebts}
-                        insights={insights} isInsightsMinimized={isInsightsMinimized} setIsInsightsMinimized={setIsInsightsMinimized} generateInsights={generateInsights} isGeneratingInsights={isGeneratingInsights}
-                    />
-                    
-                    <div className={`flex flex-col gap-6 min-w-0 transition-all duration-700 ${!isModifying && results ? 'lg:col-span-5' : 'lg:col-span-8'}`}>
+                    <div className={`flex flex-col gap-6 lg:contents ${mobileTab !== 'overview' && 'hidden lg:flex'}`}>
+                        <ResultsDashboard
+                            results={results} isModifying={isModifying} isSettled={isSettled}
+                            isMonthlyMode={isMonthlyMode} setIsMonthlyMode={setIsMonthlyMode}
+                            daysInMonth={daysInMonth} updateDays={updateDays} pendingDebts={pendingDebts}
+                            handleUnifiedSettle={handleUnifiedSettle}
+                            insights={insights}
+                            isInsightsMinimized={isInsightsMinimized}
+                            setIsInsightsMinimized={setIsInsightsMinimized}
+                            generateInsights={generateInsights}
+                            isGeneratingInsights={isGeneratingInsights}
+                            mobileHidden={false}
+                        />
+
+                        {/* Mobile Settlement Plan (Shows only in Overview Tab) */}
+                        {mobileTab === 'overview' && results && !isModifying && (
+                            <div className="lg:hidden w-full animate-in fade-in slide-in-from-bottom-4">
+                                <SettlementPlan
+                                    results={results} isSettled={isSettled}
+                                    handleUnifiedSettle={handleUnifiedSettle} handleDraftMessage={handleDraftMessage} handleCloseMonth={handleCloseMonth}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className={`${mobileTab !== 'members' ? 'hidden lg:flex' : 'flex'} flex-col gap-6 min-w-0 transition-all duration-700 ${!isModifying && results ? 'lg:col-span-5' : 'lg:col-span-8'}`}>
                         <MembersGrid
                             members={members} isModifying={isModifying} setIsModifying={setIsModifying} results={results} setResults={setResults} isSettled={isSettled}
                             daysInMonth={daysInMonth} isMonthlyMode={isMonthlyMode}
@@ -276,7 +323,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                         />
 
                         {results && !isModifying && (
-                            <div className="w-full mt-4 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="hidden lg:block w-full mt-4 animate-in fade-in slide-in-from-bottom-4">
                                 <SettlementPlan
                                     results={results} isSettled={isSettled}
                                     handleUnifiedSettle={handleUnifiedSettle} handleDraftMessage={handleDraftMessage} handleCloseMonth={handleCloseMonth}
@@ -289,7 +336,10 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
 
             <FloatingDock
                 isModifying={isModifying} results={results} isShimmering={isShimmering}
-                handleCalculateWithShimmer={handleCalculateWithShimmer} setShowReceiptModal={setShowReceiptModal} setIsModifying={setIsModifying}
+                handleCalculateWithShimmer={() => {
+                    handleCalculateWithShimmer();
+                    setMobileTab('overview');
+                }} setShowReceiptModal={setShowReceiptModal} setIsModifying={setIsModifying}
             />
 
             {error && (

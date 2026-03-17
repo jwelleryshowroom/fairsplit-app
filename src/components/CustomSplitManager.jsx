@@ -20,10 +20,11 @@ const memberColor = (name = '') => {
 
 const Avatar = ({ name = '?', size = 'md', selected = false }) => {
     const c = memberColor(name);
-    const sz = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-xs';
+    const sz = size === 'sm' ? 'w-7 h-7 text-[10px]' : 
+               size === 'lg' ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs';
     return (
         <div className={`${sz} rounded-full ${c.bg} ${c.text} font-black flex items-center justify-center flex-shrink-0 uppercase
-            ${selected ? `ring-2 ring-offset-2 ring-offset-[#111827] ${c.ring} scale-110` : 'opacity-60 hover:opacity-90'}
+            ${selected ? `ring-2 ring-offset-2 ring-offset-white ${c.ring} scale-110` : 'opacity-60 hover:opacity-90'}
             transition-all duration-200 cursor-pointer select-none`}>
             {(name || '?').charAt(0).toUpperCase()}
         </div>
@@ -60,50 +61,65 @@ export const CustomSplitSummaryCard = ({ customSplits, members, onClickManage })
                     </div>
                 </div>
                 <div className="shrink-0 bg-white p-2 rounded-xl text-orange-300 group-hover:text-orange-600 group-hover:bg-orange-100 transition-all shadow-sm">
-                   <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4" />
                 </div>
             </button>
         );
     }
 
     return (
-        <div className="bg-gradient-to-br from-orange-400 to-rose-500 rounded-2xl p-4 lg:p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(249,115,22,0.2)] text-white w-full h-full relative overflow-hidden group cursor-pointer" onClick={onClickManage}>
+        <div className="bg-gradient-to-br from-orange-400 to-rose-500 rounded-2xl p-3.5 sm:p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(249,115,22,0.2)] text-white w-full h-full relative overflow-hidden group cursor-pointer" onClick={onClickManage}>
             {/* Background design elements */}
             <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
-            
-            <div className="flex items-center gap-3 relative z-10 w-full min-w-0">
-                <div className="w-10 h-10 rounded-[14px] bg-white/20 flex shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
-                    <Split className="w-5 h-5 text-white" />
+
+            <div className="flex items-center gap-2.5 sm:gap-3 relative z-10 w-full min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
+                    <Split className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                
+
                 <div className="flex-1 min-w-0 pr-2">
-                    <div className="flex flex-col">
-                        <h3 className="text-base font-black tracking-tight truncate flex items-center gap-2 group-hover:text-amber-100 transition-colors">
-                            ₹{totalSideExpenses.toLocaleString('en-IN')}
-                        </h3>
-                        <p className="text-[10px] font-bold text-orange-100 truncate tracking-wide mt-0.5 flex flex-wrap items-center gap-[6px]">
-                            <span>{visibleSplits.length} {visibleSplits.length === 1 ? 'CUSTOM SPLIT' : 'CUSTOM SPLITS'}</span>
-                            <span className="text-white/40 mb-[1px]">•</span>
-                            <span className="text-white flex items-center gap-1 uppercase tracking-widest bg-white/10 px-1.5 py-[2px] rounded-md shadow-sm border border-white/20 group-hover:bg-white/30 group-hover:border-white/40 transition-all"><Edit3 className="w-2.5 h-2.5" /> Manage</span>
-                        </p>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <h3 className="text-sm sm:text-base font-black tracking-tight group-hover:text-amber-100 transition-colors whitespace-nowrap leading-none">
+                                ₹{totalSideExpenses.toLocaleString('en-IN')}
+                            </h3>
+                            <span className="text-[7px] sm:text-[9px] font-bold text-orange-50/70 uppercase tracking-tighter sm:tracking-widest bg-white/10 px-1.5 py-0.5 rounded-md whitespace-nowrap leading-none mb-[1px]">
+                                {visibleSplits.length} {visibleSplits.length === 1 ? 'Expense' : 'Expenses'}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
+                            <div className="inline-flex items-center gap-1.5 text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2 py-1 rounded-lg border border-white/10 group-hover:bg-white/30 transition-all w-fit">
+                                <Edit3 className="w-2.5 h-2.5" /> Manage
+                            </div>
+
+                            {/* Laptop Avatars (Aligned with Manage) */}
+                            <div className="hidden sm:flex -space-x-2 translate-x-1 group-hover:translate-x-0 transition-all duration-500">
+                                {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
+                                    const memberInfo = members?.find(m => m.id.toString() === id.toString());
+                                    const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
+                                    return (
+                                        <div key={i} className="relative z-10" style={{ zIndex: 10 - i }}>
+                                            <Avatar name={nameToUse} size="sm" selected={false} />
+                                        </div>
+                                    );
+                                })}
+                                {uniqueInvolved.size > 3 && (
+                                    <div className="w-7 h-7 rounded-full bg-orange-950/40 text-[9px] font-black text-white flex items-center justify-center border border-white/20 relative z-0">
+                                        +{uniqueInvolved.size - 3}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex -space-x-1.5 shrink-0 bg-white/10 p-1 rounded-full border border-white/20 shadow-inner">
-                    {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
-                        const memberInfo = members?.find(m => m.id.toString() === id.toString());
-                        const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
-                        return (
-                            <div key={i} className="relative z-10" style={{ zIndex: 10 - i }}>
-                                <Avatar name={nameToUse} size="sm" selected={false} />
-                            </div>
-                        );
-                    })}
-                    {uniqueInvolved.size > 3 && (
-                        <div className="w-7 h-7 rounded-full bg-orange-950/40 text-[9px] font-black text-white flex items-center justify-center border border-white/20 relative z-0">
-                            +{uniqueInvolved.size - 3}
+                {/* Mobile Avatars (inline) */}
+                <div className="flex sm:hidden -space-x-2 shrink-0">
+                    {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => (
+                        <div key={i} className="relative z-10" style={{ zIndex: 10 - i }}>
+                            <Avatar name={members?.find(m => m.id.toString() === id.toString())?.name || id.toString().replace('EXT:', '')} size="sm" selected={false} />
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
         </div>
@@ -297,7 +313,7 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                         <button
                                             key={m.id}
                                             onClick={() => toggleInvolved(m.id)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 active:scale-95 text-xs font-bold"
+                                            className="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border transition-all duration-200 active:scale-95 text-xs font-bold"
                                             style={involvedIds.includes(m.id)
                                                 ? { background: 'rgba(249,115,22,0.12)', border: '1.5px solid rgba(249,115,22,0.4)', color: '#ea580c' }
                                                 : { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b' }
@@ -345,9 +361,9 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                     ) : (
                                         <button
                                             onClick={() => setShowExtInput(true)}
-                                            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-slate-300 text-xs font-bold text-slate-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all"
+                                            className="flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full border border-dashed border-slate-300 text-xs font-bold text-slate-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all font-black"
                                         >
-                                            <UserPlus className="w-3 h-3" /> Guest
+                                            <UserPlus className="w-3.5 h-3.5" /> Guest
                                         </button>
                                     )}
                                 </div>

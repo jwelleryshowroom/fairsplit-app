@@ -10,7 +10,7 @@ import {
     Trash2, LogOut, Settings as SettingsIcon, User as UserIcon,
     Shield, Globe, Sparkles
 } from 'lucide-react';
-import SettingsModal from './SettingsModal';
+import SettingsDrawer from './SettingsDrawer';
 
 const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
     const { settings } = useSettings();
@@ -333,7 +333,12 @@ const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
                 </div>
             </div>
 
-            <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+            <SettingsDrawer 
+                isOpen={showSettings} 
+                onClose={() => setShowSettings(false)} 
+                onLeaveGroup={() => signOut(auth)}
+                onShowHelp={() => {}} 
+            />
 
             {/* Branding Footer */}
             <div className="mt-auto py-10 opacity-30 flex items-center gap-2 grayscale brightness-50">
