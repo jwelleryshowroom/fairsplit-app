@@ -5,7 +5,6 @@ import LoadingScreen from './components/LoadingScreen';
 import LoginView from './components/LoginView';
 import WelcomeDashboard from './components/WelcomeDashboard';
 import ExpenseSplitter from './components/ExpenseSplitter';
-import { SettingsProvider } from './context/SettingsContext';
 
 export default function App() {
     const [user, setUser] = useState(null);
@@ -60,24 +59,22 @@ export default function App() {
 
     if (loadingAuth) return <LoadingScreen />;
 
+    if (!user) return <LoginView />;
+
+    if (!groupId) return (
+        <WelcomeDashboard
+            user={user}
+            onJoin={handleJoinRoom}
+            onCreate={handleCreateRoom}
+        />
+    );
+
     return (
-        <SettingsProvider>
-            {!user ? (
-                <LoginView />
-            ) : !groupId ? (
-                <WelcomeDashboard
-                    user={user}
-                    onJoin={handleJoinRoom}
-                    onCreate={handleCreateRoom}
-                />
-            ) : (
-                <ExpenseSplitter
-                    user={user}
-                    groupId={groupId}
-                    initialRoomName={initialRoomName}
-                    onLeaveGroup={handleLeaveRoom}
-                />
-            )}
-        </SettingsProvider>
+        <ExpenseSplitter
+            user={user}
+            groupId={groupId}
+            initialRoomName={initialRoomName}
+            onLeaveGroup={handleLeaveRoom}
+        />
     );
 }
