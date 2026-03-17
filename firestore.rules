@@ -59,5 +59,14 @@ service cloud.firestore {
         allow update, delete: if false; // Immutable!
       }
     }
+
+    // Smart Inbox: per-user pending transactions (user can only access their own)
+    match /pending_transactions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /items/{itemId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
   }
 }

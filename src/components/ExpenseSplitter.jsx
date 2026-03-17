@@ -18,6 +18,8 @@ import SettlementPlan from './SettlementPlan';
 import ExpenseManagerModals from './ExpenseManagerModals';
 import FloatingDock from './FloatingDock';
 import SettingsDrawer from './SettingsDrawer';
+import SmartInbox from './SmartInbox';
+import { useSmartInbox } from '../hooks/useSmartInbox';
 
 const pulseAnimation = `
   @keyframes pulse {
@@ -48,6 +50,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const [isCustomSplitModalOpen, setIsCustomSplitModalOpen] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', type: 'warning', hideCancel: false, onConfirm: () => { } });
     const [showSettings, setShowSettings] = useState(false);
+    const [showSmartInbox, setShowSmartInbox] = useState(false);
 
     // Dev Console
     const [devMode, setDevMode] = useState(false);
@@ -62,6 +65,12 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
         archives, loadingData,
         roomName, groupExists, saveData
     } = useGroupData(groupId, user, initialRoomName);
+
+    // Smart Inbox
+    const {
+        pendingTransactions, pendingCount, userGroups,
+        isLoading: inboxLoading, addTransaction, assignToGroup, markPersonal, scanClipboard
+    } = useSmartInbox(user);
 
     const {
         results, setResults, isSettled, pendingDebts,
@@ -188,6 +197,21 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 onLeaveGroup={onLeaveGroup}
                 onShowHelp={() => { setShowSettings(false); setShowOnboarding(true); }}
                 user={user}
+            />
+
+            {/* Smart Inbox - rendered at root level, same z-index escape as SettingsDrawer */}
+            <SmartInbox
+                isOpen={showSmartInbox}
+                onClose={() => setShowSmartInbox(false)}
+                pendingTransactions={pendingTransactions}
+                userGroups={userGroups}
+                isLoading={inboxLoading}
+                currentGroupId={groupId}
+                currentGroupName={roomName}
+                onAssign={assignToGroup}
+                onPersonal={markPersonal}
+                onAddManual={addTransaction}
+                onScanClipboard={scanClipboard}
             />
 
             {/* Mesh Background */}
@@ -340,6 +364,8 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                     handleCalculateWithShimmer();
                     setMobileTab('overview');
                 }} setShowReceiptModal={setShowReceiptModal} setIsModifying={setIsModifying}
+                inboxCount={pendingCount}
+                onOpenInbox={() => setShowSmartInbox(true)}
             />
 
             {error && (
