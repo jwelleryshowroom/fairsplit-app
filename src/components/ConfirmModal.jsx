@@ -51,7 +51,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
     const isVisible = isOpen || isAnimatingOut;
 
     return (
-        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${isVisible && !isAnimatingOut ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`fixed inset-0 z-[99999] flex items-center justify-center p-4 transition-all duration-300 ${isVisible && !isAnimatingOut ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                 onClick={handleClose}

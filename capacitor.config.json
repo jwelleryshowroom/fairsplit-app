@@ -1,0 +1,16 @@
+{
+  "appId": "com.fairsplit.app",
+  "appName": "fairsplit",
+  "webDir": "dist",
+  "server": {
+    "hostname": "francsplit.web.app",
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"],
+      "serverClientId": "23965374340-91pntc7ujp8ndatrdup4n39v6rabvc2d.apps.googleusercontent.com"
+    }
+  }
+}

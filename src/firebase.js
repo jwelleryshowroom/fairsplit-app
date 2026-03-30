@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getEnv } from "./utils/env";
@@ -15,9 +15,24 @@ const firebaseConfig = {
     measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID")
 };
 
+import { Capacitor } from '@capacitor/core';
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+let authInstance;
+if (Capacitor.isNativePlatform()) {
+    // initializeAuth is preferred over getAuth for specifically setting persistence in webviews
+    authInstance = initializeAuth(app, {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence]
+    });
+} else {
+    // getAuth automatically includes browserPopupRedirectResolver which is required for signInWithPopup
+    authInstance = getAuth(app);
+}
+
+export const auth = authInstance;
+
 export const db = getFirestore(app);
 export const analytics = getAnalytics(app);
 export default app;

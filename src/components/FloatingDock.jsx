@@ -4,10 +4,55 @@ import { Loader2, Calculator, Camera, X, Inbox } from 'lucide-react';
 const FloatingDock = ({
     isModifying, results, isShimmering,
     handleCalculateWithShimmer, setShowReceiptModal, setIsModifying,
+    onModify,
     inboxCount = 0, onOpenInbox
 }) => {
+    const [isBodyLocked, setIsBodyLocked] = React.useState(false);
+    const [isKeyboardOpen, setIsKeyboardOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkBodyLock = () => {
+            setIsBodyLocked(document.body.style.overflow === 'hidden');
+        };
+        const observer = new MutationObserver(checkBodyLock);
+        observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+        checkBodyLock(); // initial check
+        return () => observer.disconnect();
+    }, []);
+
+    React.useEffect(() => {
+        const handleFocusIn = (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) {
+                setIsKeyboardOpen(true);
+            }
+        };
+        const handleFocusOut = () => {
+            // Slight delay to allow focus to move to the next input before hiding/showing
+            setTimeout(() => {
+                const active = document.activeElement;
+                if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && !active.isContentEditable)) {
+                    setIsKeyboardOpen(false);
+                }
+            }, 50);
+        };
+        
+        window.addEventListener('focusin', handleFocusIn);
+        window.addEventListener('focusout', handleFocusOut);
+        
+        return () => {
+            window.removeEventListener('focusin', handleFocusIn);
+            window.removeEventListener('focusout', handleFocusOut);
+        }
+    }, []);
+
+    if (isBodyLocked) return null;
+
     return (
-        <div className="fixed bottom-6 left-0 right-0 z-40 pointer-events-none flex justify-center px-4 gap-3">
+        <div 
+            className={`fixed bottom-6 left-0 right-0 z-40 pointer-events-none flex justify-center px-4 gap-3 transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom ${
+                isKeyboardOpen ? 'translate-y-24 opacity-0 scale-90 blur-[2px]' : 'translate-y-0 opacity-100 scale-100 blur-0'
+            }`}
+        >
             {(isModifying || !results) ? (
                 /* EDITING MODE: Full dock */
                 <div className="pointer-events-auto bg-white/80 backdrop-blur-2xl p-2 rounded-[2.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/50 flex items-center gap-2 max-w-[600px] w-full animate-in slide-in-from-bottom-8">
@@ -47,10 +92,10 @@ const FloatingDock = ({
                 /* RESULTS MODE: Compact pills */
                 <div className="pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-4">
                     <button
-                        onClick={() => setIsModifying(true)}
+                        onClick={() => (onModify ? onModify() : setIsModifying(true))}
                         className="bg-white/70 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-slate-800 px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest border border-slate-200/60 shadow-lg transition-all active:scale-95 flex items-center gap-2"
                     >
-                        <X className="w-3.5 h-3.5" /> Modify
+                        <X className="w-3.5 h-3.5" /> Edit Expenses
                     </button>
 
                     {/* Inbox badge — visible even in results mode */}

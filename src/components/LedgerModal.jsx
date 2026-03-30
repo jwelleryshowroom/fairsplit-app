@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, BarChart3, TrendingUp, Wallet, Receipt, ArrowUpRight, ArrowDownLeft, Home, BookOpen, Activity, Settings, HelpCircle, LogOut, Loader2, X, Info, Lightbulb, ShoppingCart, UtensilsCrossed, Shirt, CreditCard } from 'lucide-react';
+import { ChevronDown, BarChart3, TrendingUp, Wallet, Receipt, ArrowUpRight, ArrowDownLeft, Home, BookOpen, Activity, Settings, HelpCircle, LogOut, Loader2, X, Info, Lightbulb, ShoppingCart, UtensilsCrossed, Shirt, CreditCard, User, Shield } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
@@ -542,7 +542,7 @@ const MemberDetailDrawer = ({ isOpen, member, onClose }) => {
 // ---------------------------------------------------------------------------
 // 6. Main Component Route/Overlay
 // ---------------------------------------------------------------------------
-const LedgerModal = ({ isOpen, onClose, archives, groupId }) => {
+const LedgerModal = ({ isOpen, onClose, archives, groupId, user }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [expandedMonthId, setExpandedMonthId] = useState(null);
@@ -606,24 +606,37 @@ const LedgerModal = ({ isOpen, onClose, archives, groupId }) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.1] hover:text-white transition-colors">
-                        <Activity className="w-5 h-5" />
-                    </button>
-                    {/* Glowing active header icon mock */}
-                    <button className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/[0.1] text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                        <BookOpen className="w-5 h-5" />
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-[#0b0e14]"></div>
-                    </button>
-                    <button className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.1] hover:text-white transition-colors">
-                        <Settings className="w-5 h-5" />
-                    </button>
-                    <div className="w-px h-6 bg-white/[0.1] mx-1"></div>
-                    <button className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.1] hover:text-white transition-colors">
-                        <HelpCircle className="w-5 h-5" />
-                    </button>
-                    <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.1] hover:text-white transition-colors">
-                        <LogOut className="w-5 h-5" />
+                <div className="flex items-center gap-4">
+                    {/* Compact Profile Identity */}
+                    <div className="flex items-center gap-3 px-3 py-1.5 bg-white/[0.03] border border-white/[0.05] rounded-2xl shadow-lg">
+                        <div className="relative shrink-0">
+                            <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden border border-white/10">
+                                {user?.photoURL ? (
+                                    <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-4 h-4 md:w-5 md:h-5 text-indigo-100" />
+                                )}
+                            </div>
+                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0b0e14] rounded-full"></div>
+                        </div>
+                        <div className="hidden sm:block">
+                            <h4 className="text-xs font-black text-white tracking-tight leading-none mb-0.5">
+                                {user?.isAnonymous ? 'Guest' : user?.displayName?.split(' ')[0]}
+                            </h4>
+                            <p className="text-slate-500 text-[8px] font-black flex items-center gap-1 uppercase tracking-widest opacity-80">
+                                <Shield className="w-2.5 h-2.5" /> Verified
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="w-px h-6 bg-white/[0.05] mx-1"></div>
+                    
+                    <button 
+                        onClick={onClose} 
+                        className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 transition-all active:scale-95"
+                        title="Close Ledger"
+                    >
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
             </div>

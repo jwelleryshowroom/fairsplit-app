@@ -69,7 +69,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     // Smart Inbox
     const {
         pendingTransactions, pendingCount, userGroups,
-        isLoading: inboxLoading, addTransaction, assignToGroup, markPersonal, scanClipboard
+        isLoading: inboxLoading, addTransaction, assignAsHomeBill, assignAsCustomSplit, markPersonal, clearAllTransactions, scanClipboard
     } = useSmartInbox(user);
 
     const {
@@ -112,6 +112,12 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
             newMembers = members.filter(m => m.id.toString() !== id.toString());
         }
         saveData(newMembers, undefined, undefined);
+        setResults(null);
+    };
+
+    const restoreMember = (id) => {
+        const updatedMembers = members.map(m => m.id.toString() === id.toString() ? { ...m, isActive: true } : m);
+        saveData(updatedMembers, undefined, undefined);
         setResults(null);
     };
 
@@ -187,7 +193,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const totalArr = members.reduce((sum, m) => sum + (parseFloat(m.arrears) || 0), 0);
 
     return (
-        <div className="min-h-screen font-sans relative overflow-x-hidden" style={{ backgroundColor: '#F3F4F6' }}>
+        <div className="min-h-screen font-sans relative" style={{ backgroundColor: '#F3F4F6' }}>
             <style>{pulseAnimation}{shimmerAnimation}</style>
 
             {/* Settings Drawer - rendered at root level to escape backdrop-filter stacking context */}
@@ -208,10 +214,14 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 isLoading={inboxLoading}
                 currentGroupId={groupId}
                 currentGroupName={roomName}
-                onAssign={assignToGroup}
+                currentGroupMembers={members}
+                onHomeBill={assignAsHomeBill}
+                onCustomSplit={assignAsCustomSplit}
                 onPersonal={markPersonal}
                 onAddManual={addTransaction}
                 onScanClipboard={scanClipboard}
+                onClearAll={clearAllTransactions}
+                setConfirmConfig={setConfirmConfig}
             />
 
             {/* Mesh Background */}
@@ -234,6 +244,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 parseError={parseError} parseText={parseText} setParseText={setParseText} handleSmartParse={handleSmartParse} isParsing={isParsing}
                 showDraftModal={showDraftModal} setShowDraftModal={setShowDraftModal} isDrafting={isDrafting} draftedMessage={draftedMessage}
                 copyToClipboard={() => { navigator.clipboard.writeText(draftedMessage); }} copySuccess={false}
+                user={user}
             />
 
             <GroupHeader
@@ -301,7 +312,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                         onClick={() => setMobileTab('members')}
                         className={`flex-1 py-3 px-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${mobileTab === 'members' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
                     >
-                        Members Setup
+                        Expense Entry
                     </button>
                     <button
                         onClick={() => setMobileTab('overview')}
@@ -340,8 +351,8 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                     <div className={`${mobileTab !== 'members' ? 'hidden lg:flex' : 'flex'} flex-col gap-6 min-w-0 transition-all duration-700 ${!isModifying && results ? 'lg:col-span-5' : 'lg:col-span-8'}`}>
                         <MembersGrid
                             members={members} isModifying={isModifying} setIsModifying={setIsModifying} results={results} setResults={setResults} isSettled={isSettled}
-                            daysInMonth={daysInMonth} isMonthlyMode={isMonthlyMode}
-                            updateMember={updateMember} removeMember={removeMember} openSmartAddModal={openSmartAddModal} handleNameSplit={handleNameSplit}
+                            daysInMonth={daysInMonth} isMonthlyMode={isMonthlyMode} setIsMonthlyMode={setIsMonthlyMode} updateDays={updateDays}
+                            updateMember={updateMember} removeMember={removeMember} restoreMember={restoreMember} openSmartAddModal={openSmartAddModal} handleNameSplit={handleNameSplit}
                             invalidMemberIds={invalidMemberIds} isShimmering={isShimmering} addMember={addMember}
                             customSplits={customSplits} setIsCustomSplitModalOpen={setIsCustomSplitModalOpen}
                         />
@@ -364,6 +375,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                     handleCalculateWithShimmer();
                     setMobileTab('overview');
                 }} setShowReceiptModal={setShowReceiptModal} setIsModifying={setIsModifying}
+                onModify={() => { setIsModifying(true); setMobileTab('members'); }}
                 inboxCount={pendingCount}
                 onOpenInbox={() => setShowSmartInbox(true)}
             />

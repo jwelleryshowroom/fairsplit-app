@@ -6,6 +6,15 @@
     <title>FairSplit - Expense Manager</title>
   </head>
   <body>
+    <!-- Global Autofill Honeypot: Chrome fills this instead of our real inputs -->
+    <form aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;" tabindex="-1">
+      <input type="text" name="username" autoComplete="username" tabindex="-1" />
+      <input type="password" name="password" autoComplete="current-password" tabindex="-1" />
+      <input type="email" name="email" autoComplete="email" tabindex="-1" />
+      <input type="tel" name="phone" autoComplete="tel" tabindex="-1" />
+      <input type="text" name="cc-name" autoComplete="cc-name" tabindex="-1" />
+      <input type="text" name="cc-number" autoComplete="cc-number" tabindex="-1" />
+    </form>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

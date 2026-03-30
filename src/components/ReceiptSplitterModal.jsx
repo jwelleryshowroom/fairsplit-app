@@ -3,6 +3,7 @@ import { Camera, Image as ImageIcon, X, Check, Loader2, Sparkles, AlertCircle, U
 import { parseReceiptImage } from '../services/ai';
 import Modal from './Modal';
 import { useSettings } from '../context/SettingsContext';
+import { parseAIError } from '../utils/errorParser';
 
 const ReceiptSplitterModal = ({ isOpen, onClose, members, onConfirmSplits }) => {
     const { settings } = useSettings();
@@ -14,6 +15,7 @@ const ReceiptSplitterModal = ({ isOpen, onClose, members, onConfirmSplits }) => 
     const [payerId, setPayerId] = useState('');
 
     const fileInputRef = useRef(null);
+    const cameraInputRef = useRef(null);
 
     const emoji = (e) => settings.showEmojis ? e : '';
 
@@ -75,7 +77,7 @@ const ReceiptSplitterModal = ({ isOpen, onClose, members, onConfirmSplits }) => 
             setExtractedData(data);
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Failed to analyze receipt. Please try another image.');
+            setError(parseAIError(err, 'receipt'));
             setImageStr(null);
         } finally {
             setIsAnalyzing(false);
@@ -203,20 +205,37 @@ const ReceiptSplitterModal = ({ isOpen, onClose, members, onConfirmSplits }) => 
                     </div>
                 )}
 
-                {/* Upload Section */}
+                {/* Upload & Capture Section */}
                 {!imageStr && !isAnalyzing && (
-                    <div
-                        className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                        <div className="bg-slate-50 p-6 rounded-3xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                            <UploadCloud className="w-12 h-12 text-slate-300 group-hover:text-white" />
+                    <div className="flex flex-col sm:flex-row gap-4 h-full">
+                        <div
+                            className="flex-1 border-4 border-dashed border-slate-100 rounded-[2.5rem] p-10 sm:p-16 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                            <div className="bg-slate-50 p-6 rounded-3xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                <UploadCloud className="w-12 h-12 text-slate-300 group-hover:text-white" />
+                            </div>
+                            <h4 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Upload Receipt</h4>
+                            <p className="text-sm text-slate-400 max-w-xs mx-auto font-medium">
+                                Choose an image or simply <b>Cmd+V</b> to paste from clipboard. {emoji('✨')}
+                            </p>
                         </div>
-                        <h4 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Upload Receipt</h4>
-                        <p className="text-sm text-slate-400 max-w-xs mx-auto font-medium">
-                            Choose an image or simply <b>Cmd+V</b> to paste from clipboard. {emoji('✨')}
-                        </p>
+
+                        {/* Mobile Camera Capture */}
+                        <div
+                            className="sm:hidden flex-1 border-4 border-indigo-100 bg-indigo-50/10 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all group"
+                            onClick={() => cameraInputRef.current?.click()}
+                        >
+                            <input type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileUpload} />
+                            <div className="bg-indigo-600 text-white p-6 rounded-3xl mb-6 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-all">
+                                <Camera className="w-12 h-12" />
+                            </div>
+                            <h4 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Capture {emoji('📸')}</h4>
+                            <p className="text-sm text-slate-400 max-w-xs mx-auto font-medium">
+                                Use camera to scan directly.
+                            </p>
+                        </div>
                     </div>
                 )}
 

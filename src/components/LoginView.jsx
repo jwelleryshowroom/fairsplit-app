@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider, signInAnonymously } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInAnonymously, signInWithCredential } from "firebase/auth";
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { Capacitor } from '@capacitor/core';
 import { auth } from "../firebase";
 import { IndianRupee, AlertCircle, Loader2, Mail, User, Shield } from 'lucide-react';
 import LoadingScreen from './LoadingScreen';
@@ -12,16 +14,47 @@ const LoginView = () => {
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         setError('');
-        const provider = new GoogleAuthProvider();
+
         try {
-            await signInWithPopup(auth, provider);
-        } catch (err) {
-            if (err.code === 'auth/unauthorized-domain') {
-                setError(`DOMAIN ERROR: Add "${window.location.hostname}" to Firebase Console.`);
+            if (Capacitor.isNativePlatform()) {
+                console.log("Starting native Google login...");
+                // Note: serverClientId is the WEB client ID from google-services.json
+                const serverClientId = "23965374340-91pntc7ujp8ndatrdup4n39v6rabvc2d.apps.googleusercontent.com";
+                
+                const result = await FirebaseAuthentication.signInWithGoogle({
+                    serverClientId: serverClientId
+                });
+                
+                console.log("Native result received:", result);
+                
+                if (result.credential?.idToken) {
+                    console.log("ID Token found, signing into JS SDK...");
+                    const credential = GoogleAuthProvider.credential(result.credential.idToken);
+                    await signInWithCredential(auth, credential);
+                    console.log("Successfully logged in via native bridge.");
+                } else if (result.user) {
+                    console.log("User found but no ID token, relying on plugin auto-sync...");
+                } else {
+                    throw new Error("Native sign-in returned no user or credentials.");
+                }
             } else {
-                setError(err.message);
+                console.log("Starting web sign-in popup...");
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
             }
+        } catch (err) {
+            console.error("FULL AUTH ERROR:", err);
             setIsLoading(false);
+            
+            // Map common technical errors to user-friendly messages
+            let userMessage = err.message || 'Authentication failed';
+            if (userMessage.includes('No credentials available')) {
+                userMessage = "FIREBASE ERROR: SHA-1 or Client ID mismatch. Ensure your debug SHA-1 is added to Firebase Console.";
+            } else if (userMessage.includes('DEVELOPER_ERROR')) {
+                userMessage = "GOOGLE CONFIG ERROR: The Client ID does not match the app signature.";
+            }
+            
+            setError(`${err.code || 'AUTH_ERR'}: ${userMessage}`);
         }
     };
 

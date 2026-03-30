@@ -290,6 +290,7 @@ export const useSettlementEngine = (
 
                 saveData(updatedMembers, undefined, updatedSplits);
                 setResults(null);
+                setConfirmConfig(prev => ({ ...prev, isOpen: false }));
             }
         });
     };

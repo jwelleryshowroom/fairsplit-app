@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { callGemini } from '../services/ai';
 import { cleanText } from '../utils/helpers';
+import { parseAIError } from '../utils/errorParser';
 
 export const useInsightsAI = (members, results, roomName, saveData, setInsights) => {
     // Smart Parsing State
@@ -103,7 +104,7 @@ export const useInsightsAI = (members, results, roomName, saveData, setInsights)
             setParseText('');
         } catch (err) {
             console.error(err);
-            setParseError("AI Parsing failed. Try manually.");
+            setParseError(parseAIError(err, 'smart_parse'));
         } finally {
             setIsParsing(false);
         }
@@ -137,7 +138,7 @@ export const useInsightsAI = (members, results, roomName, saveData, setInsights)
             const message = await callGemini(prompt, addLog);
             setDraftedMessage(cleanText(message));
         } catch (err) {
-            setDraftedMessage("Error generating banter. Try again!");
+            setDraftedMessage(parseAIError(err, 'draft'));
         } finally {
             setIsDrafting(false);
         }
@@ -198,8 +199,8 @@ export const useInsightsAI = (members, results, roomName, saveData, setInsights)
         try {
             const text = await callGemini(prompt, addLog);
             setInsights(cleanText(text));
-        } catch (e) {
-            setInsights("Insights generate nahi ho paaye. Server lunch pe gaya hai! 🍕");
+        } catch (err) {
+            setInsights(parseAIError(err, 'insights'));
         } finally {
             setIsGeneratingInsights(false);
         }

@@ -97,6 +97,9 @@ const ArchiveMonthModal = ({ isOpen, onClose, onConfirm }) => {
                                 placeholder={`e.g. "${suggestedName}" or "Goa Trip"`}
                                 className="w-full px-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 outline-none transition-all font-medium text-slate-800 placeholder-slate-400 text-lg shadow-inner"
                                 required
+                                autoComplete="new-password"
+                                name="fsq_arch_name"
+                                spellCheck="false"
                             />
                         </div>
 

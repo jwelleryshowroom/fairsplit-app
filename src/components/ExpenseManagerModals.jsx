@@ -25,12 +25,13 @@ const ExpenseManagerModals = ({
     
     // Draft Message State
     showDraftModal, setShowDraftModal, isDrafting, draftedMessage,
-    copyToClipboard, copySuccess
+    copyToClipboard, copySuccess,
+    user
 }) => {
     return (
         <>
             <OnboardingTour isOpen={showOnboarding} onClose={closeOnboarding} />
-            <LedgerModal isOpen={showLedger} onClose={() => setShowLedger(false)} archives={archives} groupId={groupId} />
+            <LedgerModal isOpen={showLedger} onClose={() => setShowLedger(false)} archives={archives} groupId={groupId} user={user} />
             <ArchiveMonthModal
                 isOpen={showArchiveModal}
                 onClose={() => setShowArchiveModal(false)}

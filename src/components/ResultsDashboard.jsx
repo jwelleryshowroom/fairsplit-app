@@ -19,8 +19,8 @@ const ResultsDashboard = ({
                 <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500">
                     <h2 className="text-2xl font-black text-slate-800 mb-[-10px]">Split Overview</h2>
 
-                    {/* Control Bento Box */}
-                    <div className="bg-white/60 backdrop-blur-2xl rounded-[2rem] p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/40 flex justify-between items-center">
+                    {/* Control Bento Box — hidden on mobile (toggle moved inline to MembersGrid header) */}
+                    <div className="hidden md:block bg-white/60 backdrop-blur-2xl rounded-[2rem] p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/40 flex justify-between items-center">
                         <div className={`flex items-center bg-white/50 p-1.5 rounded-2xl border border-white max-w-fit shadow-inner ${isSettled ? 'pointer-events-none opacity-50' : ''}`}>
                             <button
                                 onClick={() => setIsMonthlyMode(false)}
@@ -37,7 +37,18 @@ const ResultsDashboard = ({
                             {isMonthlyMode && (
                                 <div className="flex items-center gap-2 px-3 border-l border-slate-200/50 shrink-0 animate-in fade-in slide-in-from-left-4">
                                     <Calendar className="w-4 h-4 text-slate-400" />
-                                    <input type="number" value={daysInMonth} onChange={(e) => updateDays(e.target.value)} className="w-10 bg-transparent font-black text-slate-700 text-center outline-none" />
+                                    <input
+                                        type="text"
+                                        value={daysInMonth}
+                                        onChange={(e) => updateDays(e.target.value.replace(/\D/g, ''))}
+                                        className="w-10 bg-transparent font-black text-slate-700 text-center outline-none"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        data-form-type="other"
+                                        aria-autocomplete="none"
+                                        name="fsq_zx_days"
+                                        spellCheck="false"
+                                    />
                                 </div>
                             )}
                         </div>
@@ -55,51 +66,48 @@ const ResultsDashboard = ({
             {results && !isModifying && (
                 <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-500 w-full overflow-hidden">
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-4 w-full">
-                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-2 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
+                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-3 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
                             <div className="absolute top-0 right-0 -mt-2 -mr-2 w-10 sm:w-16 h-10 sm:h-16 bg-blue-100 rounded-full blur-lg sm:blur-xl opacity-40 group-hover:scale-150 transition-all duration-500"></div>
                             <div className="relative z-10 flex flex-col gap-0.5 sm:gap-2">
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="p-1 sm:p-1.5 bg-blue-100/50 rounded-lg sm:rounded-xl">
-                                        <Calculator className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-blue-600" />
+                                <div className="flex items-start gap-1.5 sm:gap-3">
+                                    <div className="p-1 sm:p-2 bg-blue-100/50 rounded-xl shrink-0">
+                                        <Calculator className="w-3 h-3 sm:w-5 sm:h-5 text-blue-600" />
                                     </div>
-                                    <p className="text-slate-500 text-[7px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate">
-                                        <span className="sm:hidden">Exp</span>
-                                        <span className="hidden sm:inline">Total Expense</span>
-                                    </p>
+                                    <div className="flex flex-col min-w-0 pt-0.5">
+                                        <p className="text-slate-500 text-[8px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate leading-tight">Expense</p>
+                                        <p className="text-base sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate leading-none mt-1 sm:mt-1.5">₹{results.totalVariable.toFixed(0)}</p>
+                                    </div>
                                 </div>
-                                <p className="text-xs sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate sm:pl-9">₹{results.totalVariable.toFixed(0)}</p>
                             </div>
                         </div>
 
-                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-2 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
+                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-3 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
                             <div className="absolute top-0 right-0 -mt-2 -mr-2 w-10 sm:w-16 h-10 sm:h-16 bg-rose-100 rounded-full blur-lg sm:blur-xl opacity-40 group-hover:scale-150 transition-all duration-500"></div>
-                            <div className="relative z-10 flex flex-col gap-0.5 sm:gap-2">
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="p-1 sm:p-1.5 bg-rose-100/50 rounded-lg sm:rounded-xl">
-                                        <Sparkles className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-rose-600" />
+                            <div className="relative z-10">
+                                <div className="flex items-start gap-1.5 sm:gap-3">
+                                    <div className="p-1 sm:p-2 bg-rose-100/50 rounded-xl shrink-0">
+                                        <Sparkles className="w-3 h-3 sm:w-5 sm:h-5 text-rose-600" />
                                     </div>
-                                    <p className="text-slate-500 text-[7px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate">
-                                        <span className="sm:hidden">Cust</span>
-                                        <span className="hidden sm:inline">Total Custom</span>
-                                    </p>
+                                    <div className="flex flex-col min-w-0 pt-0.5">
+                                        <p className="text-slate-500 text-[8px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate leading-tight">Custom</p>
+                                        <p className="text-base sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate leading-none mt-1 sm:mt-1.5">₹{results.totalCustom.toFixed(0)}</p>
+                                    </div>
                                 </div>
-                                <p className="text-xs sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate sm:pl-9">₹{results.totalCustom.toFixed(0)}</p>
                             </div>
                         </div>
 
-                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-2 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
+                        <div className="bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-3xl p-3 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden group flex flex-col justify-center min-w-0">
                             <div className="absolute top-0 right-0 -mt-2 -mr-2 w-10 sm:w-16 h-10 sm:h-16 bg-amber-100 rounded-full blur-lg sm:blur-xl opacity-40 group-hover:scale-150 transition-all duration-500"></div>
-                            <div className="relative z-10 flex flex-col gap-0.5 sm:gap-2">
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <div className="p-1 sm:p-1.5 bg-amber-100/50 rounded-lg sm:rounded-xl">
-                                        <HistoryIcon className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-amber-600" />
+                            <div className="relative z-10">
+                                <div className="flex items-start gap-1.5 sm:gap-3">
+                                    <div className="p-1 sm:p-2 bg-amber-100/50 rounded-xl shrink-0">
+                                        <HistoryIcon className="w-3 h-3 sm:w-5 sm:h-5 text-amber-600" />
                                     </div>
-                                    <p className="text-slate-500 text-[7px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate">
-                                        <span className="sm:hidden">Arr</span>
-                                        <span className="hidden sm:inline">Total Arrears</span>
-                                    </p>
+                                    <div className="flex flex-col min-w-0 pt-0.5">
+                                        <p className="text-slate-500 text-[8px] sm:text-xs font-black uppercase tracking-tighter sm:tracking-widest truncate leading-tight">Arrears</p>
+                                        <p className="text-base sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate leading-none mt-1 sm:mt-1.5">₹{pendingDebts.reduce((sum, tx) => sum + tx.amount, 0).toFixed(0)}</p>
+                                    </div>
                                 </div>
-                                <p className="text-xs sm:text-3xl font-black sm:font-extrabold text-slate-800 tracking-tight truncate sm:pl-9">₹{pendingDebts.reduce((sum, tx) => sum + tx.amount, 0).toFixed(0)}</p>
                             </div>
                         </div>
                     </div>

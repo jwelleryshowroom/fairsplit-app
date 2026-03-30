@@ -8,7 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import Modal from './Modal';
 
 const MemberCard = ({
-    member, daysInMonth, isMonthlyMode, updateMember, removeMember,
+    member, daysInMonth, isMonthlyMode, updateDays, updateMember, removeMember,
     onSmartParse, onNameSplit, isDuplicate, isInvalid, isLocked, isShimmering
 }) => {
     const { settings } = useSettings();
@@ -113,17 +113,64 @@ const MemberCard = ({
     const potentialNames = splitRegex.test(member.name)
         ? member.name.split(splitRegex).filter(n => n.trim().length > 0)
         : [];
+
     const renderEditorContent = () => (
         <div className="w-full">
-            <div className="flex justify-between items-center mb-1.5">
-                <div className="flex bg-slate-100/50 p-1 rounded-xl gap-1">
-                    <button onClick={() => setExpenseType('variable')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 ${expenseType === 'variable' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{emoji('🍲')} Daily</button>
-                    <button onClick={() => setExpenseType('fixed')} className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 ${expenseType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{emoji('⚡')} Fixed</button>
+            <div className="flex items-center gap-2 mb-1.5 w-full">
+                {/* Daily / Fixed tab pill — ends right after Fixed, no more */}
+                <div className="flex bg-slate-100/50 p-1 rounded-xl gap-1 w-fit flex-shrink-0">
+                    <button
+                        onClick={() => setExpenseType('variable')}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-1 ${isEditingAbsent ? 'px-2' : 'px-3'} ${expenseType === 'variable' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        {emoji('🍲')}{!isEditingAbsent && ' Daily'}
+                    </button>
+                    <button
+                        onClick={() => setExpenseType('fixed')}
+                        className={`py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-1 ${isEditingAbsent ? 'px-2' : 'px-3'} ${expenseType === 'fixed' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        {emoji('⚡')}{!isEditingAbsent && ' Fixed'}
+                    </button>
                 </div>
-                {expenseType === 'variable' && (
+
+                {/* Absent — outside pill, only in monthly mode */}
+                {isMonthlyMode && (
+                    <div
+                        onClick={(e) => { e.stopPropagation(); !isLocked && setIsEditingAbsent(!isEditingAbsent); }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex-shrink-0 ${isEditingAbsent ? 'bg-white shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <span className="text-[10px] font-black uppercase tracking-wider">🌙 Absent</span>
+                        {isEditingAbsent ? (
+                            <input
+                                ref={absentRef}
+                                type="text"
+                                value={member.daysAbsent}
+                                onChange={(e) => updateMember(member.id, 'daysAbsent', e.target.value.replace(/\D/g, ''))}
+                                onBlur={() => setIsEditingAbsent(false)}
+                                onKeyDown={(e) => e.key === 'Enter' && setIsEditingAbsent(false)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-10 bg-transparent font-black text-slate-800 text-center outline-none text-sm"
+                                autoFocus
+                                inputMode="numeric"
+                                autoComplete="off"
+                                data-form-type="other"
+                                aria-autocomplete="none"
+                                name="fsq_zx_absent"
+                                spellCheck="false"
+                            />
+                        ) : (
+                            <span className="text-[10px] font-black text-slate-700">
+                                {member.daysAbsent || 0}<span className="text-slate-400">/{daysInMonth}</span>
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                {/* AI ADD — pushed to the right */}
+                {expenseType === 'variable' && !isEditingAbsent && (
                     <button
                         onClick={() => { setIsMobileModalOpen(false); onSmartParse(member.id); }}
-                        className="flex items-center justify-center gap-1 bg-gradient-to-r from-indigo-500 to-violet-500 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:scale-105 transition-all w-20 flex-shrink-0"
+                        className="flex items-center justify-center gap-1 bg-gradient-to-r from-indigo-500 to-violet-500 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm hover:scale-105 transition-all flex-shrink-0 ml-auto"
                     >
                         <Sparkles className="w-3 h-3" /> AI ADD
                     </button>
@@ -135,7 +182,7 @@ const MemberCard = ({
                     {isEditingExpense ? (
                         <div className="flex gap-2 h-full">
                             <div className="relative flex-1">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold before:content-['₹']"></span>
                                 <input
                                     ref={expenseRef}
                                     type="text"
@@ -144,7 +191,13 @@ const MemberCard = ({
                                     onChange={(e) => updateMember(member.id, expenseType === 'variable' ? 'expenseInput' : 'fixedExpenseInput', e.target.value)}
                                     onBlur={handleAutoExtract}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAutoExtract()}
-                                    className={`w-full h-full pl-10 pr-4 py-3 border-2 border-indigo-200 bg-slate-50 rounded-2xl font-black text-slate-800 outline-none transition-all ${isCleaning ? 'scale-[1.02] border-emerald-400 bg-emerald-50' : ''}`}
+                                    className={`w-full h-full pl-10 pr-4 py-4 text-base border-2 border-indigo-200 bg-slate-50 rounded-2xl font-black text-slate-800 outline-none transition-all ${isCleaning ? 'scale-[1.02] border-emerald-400 bg-emerald-50' : ''}`}
+                                    inputMode="decimal"
+                                    autoComplete="off"
+                                    data-form-type="other"
+                                    aria-autocomplete="none"
+                                    name="fsq_zx_exp"
+                                    spellCheck="false"
                                 />
                             </div>
                             <button onClick={handleAutoExtract} className="bg-slate-900 text-white px-4 rounded-2xl"><Check className="w-5 h-5" /></button>
@@ -265,10 +318,13 @@ const MemberCard = ({
 
     return (
         <>
-            <div 
-                className={`group relative bg-white/60 backdrop-blur-xl rounded-2xl p-4 lg:p-5 border border-white/40 shadow-sm transition-all duration-300 overflow-hidden ${hasError ? 'border-red-200 bg-red-50/40' : 'hover:border-indigo-200/50 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 hover:scale-[1.01]'}`}
+            <div
+                className={`group relative bg-white/60 backdrop-blur-xl rounded-2xl p-4 lg:p-5 border border-white/40 shadow-sm transition-all duration-300 overflow-hidden ${hasError ? 'border-red-200 bg-red-50/40' : 'hover:border-indigo-200/50 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 hover:scale-[1.01] cursor-pointer lg:cursor-default'}`}
                 onClick={() => {
-                    if (!isLocked && window.innerWidth < 1024) setIsMobileModalOpen(true);
+                    if (!isLocked && window.innerWidth < 1024) {
+                        setIsMobileModalOpen(true);
+                        setIsEditingExpense(true); // Frictionless instantly open input mode
+                    }
                 }}
             >
                 {/* Shimmer Overlay for AI Calculation */}
@@ -340,8 +396,9 @@ const MemberCard = ({
                             </div>
                         </div>
 
+                        {/* Absent days — desktop only on the main card. On mobile it lives in the popup modal below */}
                         {isMonthlyMode && (
-                            <div className="flex items-center gap-2 flex-shrink-0 translate-y-[-2px]">
+                            <div className="hidden lg:flex items-center gap-2 flex-shrink-0 translate-y-[-2px]">
                                 {isEditingAbsent && !isLocked ? (
                                     <input
                                         ref={absentRef}
@@ -378,7 +435,25 @@ const MemberCard = ({
             </div>
 
             {/* Mobile Popup Edit Area */}
-            <Modal isOpen={isMobileModalOpen} onClose={() => setIsMobileModalOpen(false)} title={`Edit ${member.name || 'Member'}`}>
+            <Modal isOpen={isMobileModalOpen} onClose={() => {
+                setIsMobileModalOpen(false);
+                setIsEditingExpense(false);
+                setIsEditingAbsent(false);
+            }} title={`Edit ${member.name || 'Member'}`}>
+                {isMonthlyMode && updateDays && (
+                    <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 mb-4">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">📅 Days in Month</span>
+                            <span className="text-[10px] text-slate-500 mt-0.5">Used for monthly expense proration</span>
+                        </div>
+                        <input
+                            type="number"
+                            value={daysInMonth}
+                            onChange={e => updateDays(e.target.value)}
+                            className="w-14 text-xl font-black text-indigo-600 text-center bg-white border-2 border-indigo-100 rounded-xl outline-none focus:border-indigo-400 py-1"
+                        />
+                    </div>
+                )}
                 {renderEditorContent()}
             </Modal>
         </>

@@ -20,12 +20,12 @@ const memberColor = (name = '') => {
 
 const Avatar = ({ name = '?', size = 'md', selected = false }) => {
     const c = memberColor(name);
-    const sz = size === 'sm' ? 'w-7 h-7 text-[10px]' : 
-               size === 'lg' ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs';
+    const sz = size === 'sm' ? 'w-7 h-7 text-[10px]' :
+        size === 'lg' ? 'w-11 h-11 text-sm' : 'w-9 h-9 text-xs';
     return (
         <div className={`${sz} rounded-full ${c.bg} ${c.text} font-black flex items-center justify-center flex-shrink-0 uppercase
-            ${selected ? `ring-2 ring-offset-2 ring-offset-white ${c.ring} scale-110` : 'opacity-60 hover:opacity-90'}
-            transition-all duration-200 cursor-pointer select-none`}>
+            ${selected ? `ring-2 ring-offset-2 ring-offset-white ${c.ring} scale-110` : 'hover:opacity-90'}
+            transition-all duration-200 cursor-pointer select-none shadow-sm`}>
             {(name || '?').charAt(0).toUpperCase()}
         </div>
     );
@@ -52,74 +52,71 @@ export const CustomSplitSummaryCard = ({ customSplits, members, onClickManage })
                 className="bg-white/40 backdrop-blur-md rounded-2xl border-2 border-dashed border-orange-200/80 p-4 lg:p-5 flex items-center justify-between text-orange-400 hover:text-orange-600 hover:bg-orange-50/50 transition-all group animate-in zoom-in-95 w-full h-full text-left"
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="bg-orange-100 shadow-sm w-10 h-10 rounded-[14px] flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 group-hover:scale-110 shrink-0">
-                        <Split className="w-5 h-5 text-orange-500 group-hover:text-white transition-colors" />
+                    <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-[14px] lg:rounded-[18px] bg-orange-100 flex shadow-sm items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all duration-300 group-hover:scale-110 shrink-0">
+                        <Split className="w-5 h-5 lg:w-6 lg:h-6 text-orange-500 group-hover:text-white transition-colors" />
                     </div>
                     <div className="flex flex-col items-start truncate pr-2">
-                        <span className="text-base font-black tracking-tight text-slate-700 group-hover:text-orange-600 transition-colors truncate w-full">Custom Splits</span>
-                        <span className="text-[10px] font-bold text-slate-400 tracking-wide mt-0.5 truncate w-full">Click to add a custom expense</span>
+                        <span className="text-base lg:text-lg font-black tracking-tight text-slate-700 group-hover:text-orange-600 transition-colors truncate w-full">Custom Splits</span>
+                        <span className="text-[10px] lg:text-xs font-bold text-slate-400 tracking-wide mt-0.5 truncate w-full">Click to add a custom expense</span>
                     </div>
                 </div>
-                <div className="shrink-0 bg-white p-2 rounded-xl text-orange-300 group-hover:text-orange-600 group-hover:bg-orange-100 transition-all shadow-sm">
-                    <ChevronDown className="w-4 h-4" />
+                <div className="shrink-0 bg-white p-2 lg:p-2.5 rounded-xl text-orange-300 group-hover:text-orange-600 group-hover:bg-orange-100 transition-all shadow-sm">
+                    <ChevronDown className="w-4 h-4 lg:w-5 lg:h-5" />
                 </div>
             </button>
         );
     }
 
     return (
-        <div className="bg-gradient-to-br from-orange-400 to-rose-500 rounded-2xl p-3.5 sm:p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(249,115,22,0.2)] text-white w-full h-full relative overflow-hidden group cursor-pointer" onClick={onClickManage}>
-            {/* Background design elements */}
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
+        <div className="bg-gradient-to-br from-orange-400 to-rose-500 rounded-2xl p-4 lg:p-5 flex items-center justify-between shadow-[0_8px_30px_rgb(249,115,22,0.2)] text-white w-full relative overflow-hidden group cursor-pointer border border-orange-300/50 hover:border-orange-300 transition-all active:scale-[0.99]" onClick={onClickManage}>
+            {/* Premium Background Flare */}
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
 
-            <div className="flex items-center gap-2.5 sm:gap-3 relative z-10 w-full min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
-                    <Split className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
+            <div className="w-full flex items-center justify-between gap-2 lg:gap-3 relative z-10">
+                <div className="flex items-center gap-2.5 lg:gap-3 flex-1 min-w-0">
+                    {/* Consistent Icon Container matching MemberCard Avatar */}
+                    <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-[14px] lg:rounded-[18px] bg-white/20 border border-white/30 flex shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300 backdrop-blur-md">
+                        <Split className="w-5 h-5 lg:w-6 lg:h-6 text-white drop-shadow-sm" />
+                    </div>
 
-                <div className="flex-1 min-w-0 pr-2">
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                            <h3 className="text-sm sm:text-base font-black tracking-tight group-hover:text-amber-100 transition-colors whitespace-nowrap leading-none">
+                    <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
+                        <div className="flex items-center">
+                            <h3 className="text-lg lg:text-2xl font-black tracking-tight group-hover:text-amber-100 transition-colors truncate leading-none drop-shadow-sm w-full">
                                 ₹{totalSideExpenses.toLocaleString('en-IN')}
                             </h3>
-                            <span className="text-[7px] sm:text-[9px] font-bold text-orange-50/70 uppercase tracking-tighter sm:tracking-widest bg-white/10 px-1.5 py-0.5 rounded-md whitespace-nowrap leading-none mb-[1px]">
-                                {visibleSplits.length} {visibleSplits.length === 1 ? 'Expense' : 'Expenses'}
-                            </span>
                         </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                            <div className="inline-flex items-center gap-1.5 text-[8px] sm:text-[9px] font-black uppercase tracking-widest bg-white/20 px-2 py-1 rounded-lg border border-white/10 group-hover:bg-white/30 transition-all w-fit">
-                                <Edit3 className="w-2.5 h-2.5" /> Manage
-                            </div>
-
-                            {/* Laptop Avatars (Aligned with Manage) */}
-                            <div className="hidden sm:flex -space-x-2 translate-x-1 group-hover:translate-x-0 transition-all duration-500">
-                                {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
-                                    const memberInfo = members?.find(m => m.id.toString() === id.toString());
-                                    const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
-                                    return (
-                                        <div key={i} className="relative z-10" style={{ zIndex: 10 - i }}>
-                                            <Avatar name={nameToUse} size="sm" selected={false} />
-                                        </div>
-                                    );
-                                })}
-                                {uniqueInvolved.size > 3 && (
-                                    <div className="w-7 h-7 rounded-full bg-orange-950/40 text-[9px] font-black text-white flex items-center justify-center border border-white/20 relative z-0">
-                                        +{uniqueInvolved.size - 3}
-                                    </div>
-                                )}
-                            </div>
+                        <div className="flex items-center mt-0.5 lg:mt-1 truncate w-full">
+                            <span className="bg-orange-600/40 text-[9px] lg:text-[10px] font-black text-orange-100/90 px-1.5 py-0.5 rounded leading-none border border-orange-300/30 uppercase tracking-widest shrink-0">
+                                {visibleSplits.length} <span className="hidden lg:inline">Expense{visibleSplits.length !== 1 && 's'}</span><span className="lg:hidden">Exp</span>
+                            </span>
+                            <span className="hidden lg:inline-block text-[10px] font-bold text-orange-100/80 uppercase tracking-widest ml-1.5 truncate opacity-90">• Tap to Manage</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Avatars (inline) */}
-                <div className="flex sm:hidden -space-x-2 shrink-0">
-                    {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => (
-                        <div key={i} className="relative z-10" style={{ zIndex: 10 - i }}>
-                            <Avatar name={members?.find(m => m.id.toString() === id.toString())?.name || id.toString().replace('EXT:', '')} size="sm" selected={false} />
-                        </div>
-                    ))}
+                {/* Right Side Stacked Profiles */}
+                <div className="flex flex-row items-center gap-2 lg:gap-3 shrink-0">
+                    <div className="hidden lg:flex -space-x-2 shrink-0 group-hover:-translate-x-2 transition-transform duration-500">
+                        {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
+                            const memberInfo = members?.find(m => m.id.toString() === id.toString());
+                            const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
+                            return (
+                                <div key={i} className="relative z-10 ring-2 ring-rose-400 rounded-full shadow-md bg-white hover:-translate-y-1 transition-transform" style={{ zIndex: 10 - i }}>
+                                    <Avatar name={nameToUse} size="sm" selected={false} />
+                                </div>
+                            );
+                        })}
+                        {uniqueInvolved.size > 3 && (
+                            <div className="w-7 h-7 rounded-full bg-orange-900/60 text-[9px] font-black text-white flex items-center justify-center border border-white/30 relative z-0 backdrop-blur-md shadow-inner ring-2 ring-rose-400">
+                                +{uniqueInvolved.size - 3}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Floating Action Button */}
+                    <div className="bg-white/20 p-2 lg:p-2.5 rounded-xl border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-sm text-white transition-transform group-hover:scale-110">
+                        <Edit3 className="w-4 h-4 lg:w-5 lg:h-5" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -281,12 +278,17 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">₹</span>
                                         <input
-                                            type="number"
+                                            type="text"
                                             className="w-full pl-7 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-300 text-sm font-bold text-slate-800"
                                             value={amount}
-                                            onChange={e => setAmount(e.target.value)}
+                                            onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
                                             placeholder="0"
-                                            min="0"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            data-form-type="other"
+                                            aria-autocomplete="none"
+                                            name="fsq_zx_cs_amt"
+                                            spellCheck="false"
                                         />
                                     </div>
                                 </div>
@@ -302,6 +304,11 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                     onChange={e => setDescription(e.target.value)}
                                     placeholder="e.g. Wifi, Pizza, Grab..."
                                     onKeyDown={e => e.key === 'Enter' && addSplit()}
+                                    autoComplete="off"
+                                    data-form-type="other"
+                                    aria-autocomplete="none"
+                                    name="fsq_zx_cs_desc"
+                                    spellCheck="false"
                                 />
                             </div>
 
@@ -350,6 +357,9 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                                 onChange={e => setExtName(e.target.value)}
                                                 autoFocus
                                                 onKeyDown={e => e.key === 'Enter' && addExternal()}
+                                                autoComplete="new-password"
+                                                name="fsq_cs_ext_name"
+                                                spellCheck="false"
                                             />
                                             <button onClick={addExternal} className="bg-emerald-500 text-white p-1 rounded-lg hover:bg-emerald-600 transition-colors">
                                                 <Check className="w-3 h-3" />
