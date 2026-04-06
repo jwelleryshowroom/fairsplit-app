@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { ChevronDown, BarChart3, TrendingUp, Wallet, Receipt, ArrowUpRight, ArrowDownLeft, Home, BookOpen, Activity, Settings, HelpCircle, LogOut, Loader2, X, Info, Lightbulb, ShoppingCart, UtensilsCrossed, Shirt, CreditCard, User, Shield } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import UserAvatar from './UserAvatar';
 
 // ---------------------------------------------------------------------------
 // 1. Data Hook
@@ -238,7 +238,7 @@ const NodeDetailContent = ({
                                 <div className="absolute inset-0 bg-blue-500/[0.02] opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
                                 <div className="flex items-center gap-3 relative z-10 min-w-0">
                                     <div className="w-10 h-10 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-sm border border-slate-700 overflow-hidden shrink-0">
-                                        {s.photoURL ? <img src={s.photoURL} alt={s.memberName} className="w-full h-full object-cover" /> : s.memberName.charAt(0)}
+                                        <UserAvatar name={s.memberName} photoURL={s.photoURL} size="xs" border={false} className="border-0 shadow-none" />
                                     </div>
                                     <div className="flex flex-col justify-center min-w-0">
                                         <div className="flex items-center gap-1.5 mb-0.5">
@@ -446,11 +446,7 @@ const MemberDetailDrawer = ({ isOpen, member, onClose }) => {
                 <div className="p-8 pt-10">
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 rounded-full bg-slate-800 border-2 border-white/10 flex items-center justify-center text-2xl font-black text-white overflow-hidden shadow-xl">
-                                {member.photoURL ? (
-                                    <img src={member.photoURL} alt={member.memberName} className="w-full h-full object-cover" />
-                                ) : member.memberName.charAt(0)}
-                            </div>
+                            <UserAvatar name={member.memberName} photoURL={member.photoURL} size="md" className="rounded-full shadow-xl" />
                             <div>
                                 <h2 className="text-2xl font-black text-white tracking-tight leading-none mb-2">{member.memberName}</h2>
                                 <div className="flex flex-wrap gap-2">
@@ -610,13 +606,7 @@ const LedgerModal = ({ isOpen, onClose, archives, groupId, user }) => {
                     {/* Compact Profile Identity */}
                     <div className="flex items-center gap-3 px-3 py-1.5 bg-white/[0.03] border border-white/[0.05] rounded-2xl shadow-lg">
                         <div className="relative shrink-0">
-                            <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden border border-white/10">
-                                {user?.photoURL ? (
-                                    <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <User className="w-4 h-4 md:w-5 md:h-5 text-indigo-100" />
-                                )}
-                            </div>
+                            <UserAvatar user={user} size="sm" className="rounded-xl shadow-lg border border-white/10" />
                             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0b0e14] rounded-full"></div>
                         </div>
                         <div className="hidden sm:block">

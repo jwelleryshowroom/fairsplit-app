@@ -11,6 +11,7 @@ import {
     Shield, Globe, Sparkles
 } from 'lucide-react';
 import SettingsDrawer from './SettingsDrawer';
+import UserAvatar from './UserAvatar';
 
 const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
     const { settings } = useSettings();
@@ -140,13 +141,7 @@ const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
                     <div className="flex-1 bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:shadow-md flex items-center justify-between">
                         <div className="flex items-center gap-4 md:gap-6">
                             <div className="relative">
-                                <div className="w-14 h-14 md:w-20 md:h-20 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl md:rounded-[1.8rem] flex items-center justify-center text-white shadow-xl shadow-indigo-100 overflow-hidden">
-                                    {user.photoURL ? (
-                                        <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <UserIcon className="w-6 h-6 md:w-10 md:h-10" />
-                                    )}
-                                </div>
+                                <UserAvatar user={user} size="lg" className="rounded-2xl md:rounded-[1.8rem] shadow-xl shadow-indigo-100" />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 md:w-7 md:h-7 bg-emerald-500 border-[3px] md:border-4 border-white rounded-full shadow-sm"></div>
                             </div>
                             <div>

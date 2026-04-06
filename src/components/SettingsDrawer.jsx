@@ -1,6 +1,6 @@
-import React from 'react';
 import { X, Moon, Sun, Smile, Layout, Zap, Check, HelpCircle, LogOut, Settings, User } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import UserAvatar from './UserAvatar';
 
 const SettingsDrawer = ({ isOpen, onClose, onLeaveGroup, onShowHelp, user, isGroupView = true, onLogOut }) => {
     const { settings, updateSetting } = useSettings();
@@ -70,18 +70,8 @@ const SettingsDrawer = ({ isOpen, onClose, onLeaveGroup, onShowHelp, user, isGro
                     {/* Profile Card */}
                     <div className="flex flex-col items-center text-center p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
                         <div className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
-                            {user?.photoURL ? (
-                                <img
-                                    src={user.photoURL}
-                                    alt="Profile"
-                                    className="relative w-24 h-24 rounded-full border-4 border-white/60 shadow-xl object-cover"
-                                />
-                            ) : (
-                                <div className="relative w-24 h-24 rounded-full border-4 border-white/60 shadow-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-3xl font-black">
-                                    {(user?.displayName || user?.email || 'G')[0].toUpperCase()}
-                                </div>
-                            )}
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
+                            <UserAvatar user={user} size="xl" className="border-4 border-white/60" />
                             <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 border-4 border-white rounded-full flex items-center justify-center shadow-lg" title="Active">
                                 <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                             </div>

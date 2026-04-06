@@ -1,5 +1,6 @@
 import React from 'react';
 import { IndianRupee, Check, Share2, History as HistoryIcon, BookOpen } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 
 const GroupHeader = ({
     onLeaveGroup,
@@ -72,13 +73,7 @@ const GroupHeader = ({
                 >
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-center gap-2 bg-white/40 backdrop-blur-xl border border-white/60 p-1.5 md:pr-4 rounded-full shadow-sm hover:shadow-md transition-all hover:bg-white/60">
-                        <div className="relative w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-                            <img
-                                src={user?.photoURL || '/gmail-avatar.png'}
-                                alt="Profile"
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                        <UserAvatar user={user} size="sm" className="border-2 border-white shadow-sm transition-transform group-hover:scale-105" />
                         <div className="hidden md:flex flex-col leading-none">
                             <span className="text-xs font-black text-slate-800 tracking-tight">{user?.displayName?.split(' ')[0] || 'Ankit'}</span>
                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Premium</span>
