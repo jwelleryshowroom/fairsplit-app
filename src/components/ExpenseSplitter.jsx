@@ -20,6 +20,7 @@ import FloatingDock from './FloatingDock';
 import SettingsDrawer from './SettingsDrawer';
 import SmartInbox from './SmartInbox';
 import { useSmartInbox } from '../hooks/useSmartInbox';
+import ConfirmModal from './ConfirmModal';
 
 const pulseAnimation = `
   @keyframes pulse {
@@ -169,6 +170,16 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
         }
     };
 
+    const updateMultipleMembers = (updatesArray) => {
+        let updatedMembers = [...members];
+        updatesArray.forEach(({ id, f, v }) => {
+            updatedMembers = updatedMembers.map(m => m.id.toString() === id.toString() ? { ...m, [f]: v } : m);
+        });
+        setMembers(updatedMembers);
+        saveData(updatedMembers, undefined, undefined);
+        setResults(null);
+    };
+
     const updateDays = (val) => {
         if (val !== '' && parseInt(val) < 0) val = '0';
         setDaysInMonth(val);
@@ -288,7 +299,19 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                             <span className="text-sm font-bold text-red-800 leading-tight">Warning: Group arrears are unbalanced by ₹{Math.abs(totalArr).toFixed(2)}. Final settlement checks may be offset.</span>
                         </div>
                         <button
-                            onClick={() => { if (window.confirm("Zero out ALL arrears?")) saveData(members.map(m => ({ ...m, arrears: "0.00" }))); setResults(null); }}
+                            onClick={() => {
+                                setConfirmConfig({
+                                    isOpen: true,
+                                    title: "Zero out ALL arrears?",
+                                    message: "This will permanently reset all past debts in the group to zero. Proceed?",
+                                    type: "warning",
+                                    confirmText: "Yes, Zero All Arrears",
+                                    onConfirm: () => {
+                                        saveData(members.map(m => ({ ...m, arrears: "0.00" })));
+                                        setResults(null);
+                                    }
+                                });
+                            }}
                             className="text-xs font-black uppercase tracking-widest text-red-600 bg-white hover:bg-red-50 px-5 py-3 rounded-xl shadow-sm transition-colors"
                         >
                             Zero All Arrears
@@ -375,7 +398,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                         <MembersGrid
                             members={members} isModifying={isModifying} setIsModifying={setIsModifying} results={results} setResults={setResults} isSettled={isSettled}
                             daysInMonth={daysInMonth} isMonthlyMode={isMonthlyMode} setIsMonthlyMode={setIsMonthlyMode} updateDays={updateDays}
-                            updateMember={updateMember} removeMember={removeMember} restoreMember={restoreMember} openSmartAddModal={openSmartAddModal} handleNameSplit={handleNameSplit}
+                            updateMember={updateMember} updateMultipleMembers={updateMultipleMembers} removeMember={removeMember} restoreMember={restoreMember} openSmartAddModal={openSmartAddModal} handleNameSplit={handleNameSplit}
                             invalidMemberIds={invalidMemberIds} isShimmering={isShimmering} addMember={addMember}
                             customSplits={customSplits} setIsCustomSplitModalOpen={setIsCustomSplitModalOpen}
                         />

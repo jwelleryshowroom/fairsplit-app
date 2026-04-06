@@ -6,7 +6,7 @@ import { CustomSplitSummaryCard } from './CustomSplitManager';
 const MembersGrid = ({
     members, isModifying, setIsModifying, results, setResults, isSettled,
     daysInMonth, isMonthlyMode, setIsMonthlyMode, updateDays,
-    updateMember, removeMember, restoreMember, openSmartAddModal, handleNameSplit,
+    updateMember, updateMultipleMembers, removeMember, restoreMember, openSmartAddModal, handleNameSplit,
     invalidMemberIds, isShimmering, addMember,
     customSplits, setIsCustomSplitModalOpen
 }) => {
@@ -18,9 +18,13 @@ const MembersGrid = ({
         const fromMember = members.find(m => String(m.id) === String(fromId));
         const toMember   = members.find(m => String(m.id) === String(toId));
         if (!fromMember || !toMember) return;
-        updateMember(fromId, 'arrears', -Math.abs(amt));
+        
         const existingTo = parseFloat(toMember.arrears) || 0;
-        updateMember(toId,   'arrears', (existingTo + Math.abs(amt)).toFixed(2));
+        
+        updateMultipleMembers([
+            { id: fromId, f: 'arrears', v: -Math.abs(amt) },
+            { id: toId,   f: 'arrears', v: (existingTo + Math.abs(amt)).toFixed(2) }
+        ]);
     };
 
     const clearArrear = (memberId) => updateMember(memberId, 'arrears', 0);
