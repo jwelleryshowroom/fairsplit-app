@@ -58,6 +58,7 @@ const UserAvatar = ({
                 <img 
                     src={displayPhoto} 
                     alt={alt} 
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
                     onError={() => setHasError(true)}
                 />
