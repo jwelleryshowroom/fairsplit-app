@@ -51,6 +51,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', type: 'warning', hideCancel: false, onConfirm: () => { } });
     const [showSettings, setShowSettings] = useState(false);
     const [showSmartInbox, setShowSmartInbox] = useState(false);
+    const [customSplitInitialData, setCustomSplitInitialData] = useState(null);
 
     // Dev Console
     const [devMode, setDevMode] = useState(false);
@@ -177,6 +178,25 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
     const updateCustomSplits = (newSplits) => saveData(undefined, undefined, newSplits);
     const handleConfirmReceiptSplits = (newSplits) => { saveData(members, undefined, [...customSplits, ...newSplits]); setShowReceiptModal(false); };
 
+    const handleDetailedSplit = (tx, editedMerchant) => {
+        // Pre-fill the Custom Split Modal
+        const myName = user?.displayName?.toLowerCase() || '';
+        const myEmailPrefix = user?.email?.split('@')[0].toLowerCase() || '';
+        const me = members.find(m => m.isActive !== false && (m.name.toLowerCase() === myName || m.name.toLowerCase() === myEmailPrefix)) || members[0];
+        
+        setCustomSplitInitialData({
+            amount: tx.amount,
+            description: editedMerchant || tx.merchant || '',
+            payerId: me?.id || ''
+        });
+        
+        // Hide from Smart Inbox as it's now handled manually here
+        markPersonal(tx.id);
+        
+        setShowSmartInbox(false);
+        setIsCustomSplitModalOpen(true);
+    };
+
     // Rendering Checks
     if (loadingData) return <LoadingScreen message="Loading expenses..." />;
     if (!groupExists) return (
@@ -222,6 +242,8 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 onScanClipboard={scanClipboard}
                 onClearAll={clearAllTransactions}
                 setConfirmConfig={setConfirmConfig}
+                onDetailedSplit={handleDetailedSplit}
+                customSplits={customSplits}
             />
 
             {/* Mesh Background */}
@@ -237,7 +259,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                 showLedger={showLedger} setShowLedger={setShowLedger} archives={archives} groupId={groupId}
                 showArchiveModal={showArchiveModal} setShowArchiveModal={setShowArchiveModal} confirmCloseMonth={confirmCloseMonth}
                 showActivityFeed={showActivityFeed} setShowActivityFeed={setShowActivityFeed}
-                isCustomSplitModalOpen={isCustomSplitModalOpen} setIsCustomSplitModalOpen={setIsCustomSplitModalOpen} members={members} customSplits={customSplits} updateCustomSplits={updateCustomSplits}
+                isCustomSplitModalOpen={isCustomSplitModalOpen} setIsCustomSplitModalOpen={setIsCustomSplitModalOpen} members={members} customSplits={customSplits} updateCustomSplits={updateCustomSplits} customSplitInitialData={customSplitInitialData} setCustomSplitInitialData={setCustomSplitInitialData}
                 showReceiptModal={showReceiptModal} setShowReceiptModal={setShowReceiptModal} handleConfirmReceiptSplits={handleConfirmReceiptSplits}
                 confirmConfig={confirmConfig} setConfirmConfig={setConfirmConfig}
                 showParseModal={showParseModal} setShowParseModal={setShowParseModal} emoji={emoji}

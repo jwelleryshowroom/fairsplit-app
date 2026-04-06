@@ -174,7 +174,18 @@ export const useSettlementEngine = (
             const p = proc.find(m => m.id.toString() === s.payerId.toString());
             if (p) p.cCredit += s.amount;
 
-            if (s.involvedIds.length > 0) {
+            if (s.splitType === 'exact' && s.allocations) {
+                Object.entries(s.allocations).forEach(([id, exactAmtRaw]) => {
+                    const exactAmt = parseFloat(exactAmtRaw) || 0;
+                    if (exactAmt > 0) {
+                        const d = proc.find(m => m.id.toString() === id.toString());
+                        if (d) {
+                            d.cDebit += exactAmt;
+                            if (!isSettlement) d.displayCDebit += exactAmt;
+                        }
+                    }
+                });
+            } else if (s.involvedIds && s.involvedIds.length > 0) {
                 const share = s.amount / s.involvedIds.length;
                 s.involvedIds.forEach(id => {
                     const d = proc.find(m => m.id.toString() === id.toString());

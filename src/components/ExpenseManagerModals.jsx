@@ -16,6 +16,7 @@ const ExpenseManagerModals = ({
     showArchiveModal, setShowArchiveModal, confirmCloseMonth,
     showActivityFeed, setShowActivityFeed,
     isCustomSplitModalOpen, setIsCustomSplitModalOpen, members, customSplits, updateCustomSplits,
+    customSplitInitialData, setCustomSplitInitialData,
     showReceiptModal, setShowReceiptModal, handleConfirmReceiptSplits,
     confirmConfig, setConfirmConfig,
     
@@ -112,6 +113,8 @@ const ExpenseManagerModals = ({
                 members={members}
                 customSplits={customSplits}
                 setCustomSplits={updateCustomSplits}
+                initialData={customSplitInitialData}
+                setInitialData={setCustomSplitInitialData}
             />
 
             <ReceiptSplitterModal

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Split, X, Check, UserPlus, AlertCircle, Plus, Trash2, Receipt, Users, ChevronDown, Edit3 } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 // Deterministic color per member name
 const memberColor = (name = '') => {
@@ -72,51 +73,47 @@ export const CustomSplitSummaryCard = ({ customSplits, members, onClickManage })
             {/* Premium Background Flare */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 pointer-events-none"></div>
 
-            <div className="w-full flex items-center justify-between gap-2 lg:gap-3 relative z-10">
-                <div className="flex items-center gap-2.5 lg:gap-3 flex-1 min-w-0">
-                    {/* Consistent Icon Container matching MemberCard Avatar */}
-                    <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-[14px] lg:rounded-[18px] bg-white/20 border border-white/30 flex shrink-0 items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300 backdrop-blur-md">
-                        <Split className="w-5 h-5 lg:w-6 lg:h-6 text-white drop-shadow-sm" />
+            <div className="w-full flex items-center justify-between gap-3 relative z-10 transition-all duration-300 group-hover:opacity-20 group-hover:blur-[2px] group-hover:scale-[0.98]">
+                <div className="flex items-center gap-2.5 lg:gap-4 flex-1 min-w-0">
+                    <div className="w-10 h-10 lg:w-16 lg:h-16 rounded-[14px] lg:rounded-[22px] bg-white/20 border border-white/30 flex shrink-0 items-center justify-center shadow-inner group-hover:rotate-6 transition-transform duration-500 backdrop-blur-md">
+                        <Split className="w-5 h-5 lg:w-8 lg:h-8 text-white drop-shadow-sm" />
                     </div>
 
-                    <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
-                        <div className="flex items-center">
-                            <h3 className="text-lg lg:text-2xl font-black tracking-tight group-hover:text-amber-100 transition-colors truncate leading-none drop-shadow-sm w-full">
-                                ₹{totalSideExpenses.toLocaleString('en-IN')}
-                            </h3>
-                        </div>
-                        <div className="flex items-center mt-0.5 lg:mt-1 truncate w-full">
-                            <span className="bg-orange-600/40 text-[9px] lg:text-[10px] font-black text-orange-100/90 px-1.5 py-0.5 rounded leading-none border border-orange-300/30 uppercase tracking-widest shrink-0">
-                                {visibleSplits.length} <span className="hidden lg:inline">Expense{visibleSplits.length !== 1 && 's'}</span><span className="lg:hidden">Exp</span>
+                    <div className="flex flex-col justify-center flex-1 min-w-0">
+                        <h3 className="text-xl lg:text-3xl font-black tracking-tighter sm:tracking-tight truncate leading-none drop-shadow-md">
+                            ₹{totalSideExpenses.toLocaleString('en-IN')}
+                        </h3>
+                        <div className="flex items-center mt-1 lg:mt-2">
+                            <span className="bg-white/20 text-[9px] lg:text-[11px] font-black text-white px-2 py-0.5 rounded-lg border border-white/20 uppercase tracking-widest shrink-0 shadow-sm">
+                                {visibleSplits.length} EXP
                             </span>
-                            <span className="hidden lg:inline-block text-[10px] font-bold text-orange-100/80 uppercase tracking-widest ml-1.5 truncate opacity-90">• Tap to Manage</span>
+                            <span className="hidden sm:inline-block text-[10px] font-bold text-white/80 uppercase tracking-widest ml-2 truncate opacity-80 select-none">• Tap to manage</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Side Stacked Profiles */}
-                <div className="flex flex-row items-center gap-2 lg:gap-3 shrink-0">
-                    <div className="hidden lg:flex -space-x-2 shrink-0 group-hover:-translate-x-2 transition-transform duration-500">
-                        {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
-                            const memberInfo = members?.find(m => m.id.toString() === id.toString());
-                            const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
-                            return (
-                                <div key={i} className="relative z-10 ring-2 ring-rose-400 rounded-full shadow-md bg-white hover:-translate-y-1 transition-transform" style={{ zIndex: 10 - i }}>
-                                    <Avatar name={nameToUse} size="sm" selected={false} />
-                                </div>
-                            );
-                        })}
-                        {uniqueInvolved.size > 3 && (
-                            <div className="w-7 h-7 rounded-full bg-orange-900/60 text-[9px] font-black text-white flex items-center justify-center border border-white/30 relative z-0 backdrop-blur-md shadow-inner ring-2 ring-rose-400">
-                                +{uniqueInvolved.size - 3}
+                <div className="hidden sm:flex -space-x-2 lg:-space-x-3 shrink-0 mr-1 sm:mr-2">
+                    {Array.from(uniqueInvolved).slice(0, 3).map((id, i) => {
+                        const memberInfo = members?.find(m => m.id.toString() === id.toString());
+                        const nameToUse = memberInfo?.name || id.toString().replace('EXT:', '');
+                        return (
+                            <div key={i} className="relative z-10 ring-2 ring-white/30 rounded-full shadow-lg" style={{ zIndex: 10 - i }}>
+                                <Avatar name={nameToUse} size="sm" selected={false} />
                             </div>
-                        )}
-                    </div>
-                    
-                    {/* Floating Action Button */}
-                    <div className="bg-white/20 p-2 lg:p-2.5 rounded-xl border border-white/30 backdrop-blur-md flex items-center justify-center shrink-0 shadow-sm text-white transition-transform group-hover:scale-110">
-                        <Edit3 className="w-4 h-4 lg:w-5 lg:h-5" />
-                    </div>
+                        );
+                    })}
+                    {uniqueInvolved.size > 3 && (
+                        <div className="w-7 h-7 lg:w-9 lg:h-9 rounded-full bg-slate-900/40 text-[9px] lg:text-[10px] font-black text-white flex items-center justify-center border border-white/30 backdrop-blur-md shadow-inner ring-2 ring-white/30">
+                            +{uniqueInvolved.size - 3}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* HOVER OVERLAY: Styled exactly like the Settle button */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out bg-white/5 backdrop-blur-[1px]">
+                <div className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] lg:text-xs shadow-2xl flex items-center gap-2 border border-white/10 group-active:scale-95 transition-all">
+                    <Edit3 className="w-4 h-4" /> Manage Splits
                 </div>
             </div>
         </div>
@@ -127,7 +124,7 @@ export const CustomSplitSummaryCard = ({ customSplits, members, onClickManage })
 // ============================================================================
 // 2. FULL MANAGEMENT MODAL (The Overlay)
 // ============================================================================
-export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCustomSplits }) => {
+export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCustomSplits, initialData, setInitialData }) => {
     const [payerId, setPayerId] = useState('');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -135,6 +132,30 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
     const [addError, setAddError] = useState('');
     const [showExtInput, setShowExtInput] = useState(false);
     const [extName, setExtName] = useState('');
+    
+    // Exact Split Features
+    const [splitType, setSplitType] = useState('equal'); // 'equal' | 'exact'
+    const [allocations, setAllocations] = useState({});
+
+    // Edit mode
+    const [isEditing, setIsEditing] = useState(false);
+    const [editSnapshot, setEditSnapshot] = useState(null);
+
+    // Mobile tap-to-reveal actions
+    const [tappedCardId, setTappedCardId] = useState(null);
+
+    // Delete confirmation
+    const [deleteTarget, setDeleteTarget] = useState(null); // split object to confirm-delete
+
+    React.useEffect(() => {
+        if (isOpen && initialData) {
+            setAmount(initialData.amount ? initialData.amount.toString() : '');
+            setDescription(initialData.description || '');
+            setPayerId(initialData.payerId?.toString() || '');
+            setSplitType('equal');
+            setAllocations({});
+        }
+    }, [isOpen, initialData]);
 
     const toggleInvolved = (id) => {
         setInvolvedIds(prev =>
@@ -159,18 +180,96 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
         setAddError('');
         if (!payerId) { setAddError('Select who paid.'); return; }
         if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { setAddError('Enter a valid amount.'); return; }
-        if (involvedIds.length < 2) { setAddError('Select at least 2 people to split with.'); return; }
-        setCustomSplits([...customSplits, {
-            id: Date.now(),
-            payerId: payerId.toString(),
-            amount: parseFloat(amount),
-            description: description.trim(),
-            involvedIds
-        }]);
+        
+        const numericAmount = parseFloat(amount);
+        
+        if (splitType === 'equal') {
+            if (involvedIds.length < 2) { setAddError('Select at least 2 people to split with.'); return; }
+            setCustomSplits([...customSplits, {
+                id: Date.now(),
+                payerId: payerId.toString(),
+                amount: numericAmount,
+                splitType: 'equal',
+                description: description.trim(),
+                involvedIds
+            }]);
+        } else {
+            const activeAllocations = Object.entries(allocations).filter(([k, v]) => parseFloat(v || 0) > 0);
+            if (activeAllocations.length === 0) { setAddError('Enter at least one amount.'); return; }
+            
+            const totalAllocated = activeAllocations.reduce((sum, [k, v]) => sum + parseFloat(v), 0);
+            if (Math.abs(numericAmount - totalAllocated) > 0.05) { 
+                setAddError(`Allocated (₹${totalAllocated}) must exactly equal the total amount (₹${numericAmount}).`); 
+                return; 
+            }
+            
+            const exactInvolvedIds = activeAllocations.map(([k, v]) => k);
+            const cleanAllocations = {};
+            activeAllocations.forEach(([k, v]) => { cleanAllocations[k] = parseFloat(v); });
+
+            setCustomSplits([...customSplits, {
+                id: Date.now(),
+                payerId: payerId.toString(),
+                amount: numericAmount,
+                splitType: 'exact',
+                description: description.trim(),
+                involvedIds: exactInvolvedIds,
+                allocations: cleanAllocations
+            }]);
+        }
+        
         setAmount(''); setInvolvedIds([]); setPayerId(''); setDescription(''); setAddError('');
+        setAllocations({}); setSplitType('equal');
+        setIsEditing(false); setEditSnapshot(null);
+        if (setInitialData) setInitialData(null);
     };
 
     const removeSplit = (id) => setCustomSplits(customSplits.filter(s => s.id !== id));
+
+    const loadToEdit = (split) => {
+        // Save snapshot so we can restore on cancel
+        setEditSnapshot(split);
+        setIsEditing(true);
+        // Remove from the list
+        setCustomSplits(customSplits.filter(s => s.id !== split.id));
+        // Populate form — normalize IDs to the same type as member.id for pill matching
+        setPayerId(split.payerId?.toString() || '');
+        setAmount(split.amount?.toString() || '');
+        // Strip the auto-prefix emoji added by Smart Inbox
+        const cleanDesc = (split.description || '').replace(/^👥 Split:\s*/i, '');
+        setDescription(cleanDesc);
+        setSplitType(split.splitType || 'equal');
+        // Normalize involvedIds to match the type of member.id (could be number or string)
+        const normalizedIds = (split.involvedIds || []).map(id => {
+            const asNum = Number(id);
+            const matchedMember = members.find(m => m.id === asNum || m.id === id || m.id?.toString() === id?.toString());
+            return matchedMember ? matchedMember.id : id;
+        });
+        setInvolvedIds(normalizedIds);
+        setAllocations(
+            split.splitType === 'exact' && split.allocations
+                ? Object.fromEntries(Object.entries(split.allocations).map(([k, v]) => [k, v.toString()]))
+                : {}
+        );
+        setAddError('');
+    };
+
+    const cancelEdit = () => {
+        const snapshot = editSnapshot; // capture before any state clears
+        // Reset form first
+        setIsEditing(false);
+        setEditSnapshot(null);
+        setPayerId(''); setAmount(''); setDescription(''); setInvolvedIds([]);
+        setAllocations({}); setSplitType('equal'); setAddError('');
+        // Restore the original entry back to the list
+        if (snapshot) {
+            setCustomSplits(prev => {
+                const alreadyExists = prev.some(s => s.id === snapshot.id);
+                if (alreadyExists) return prev;
+                return [...prev, snapshot]; // append to end, preserving original order
+            });
+        }
+    };
 
     const getName = (id) => {
         if (typeof id === 'string' && id.startsWith('EXT:')) return id.replace('EXT:', '') + ' (Guest)';
@@ -185,14 +284,22 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
     // Per-person net across all side splits
     const perPersonMap = {};
     visibleSplits.forEach(split => {
-        const count = split.involvedIds.length;
-        const perShare = split.amount / count;
-        split.involvedIds.forEach(id => {
-            if (!perPersonMap[id]) perPersonMap[id] = { name: getName(id), paid: 0, share: 0 };
-            perPersonMap[id].share += perShare;
-        });
         if (!perPersonMap[split.payerId]) perPersonMap[split.payerId] = { name: getName(split.payerId), paid: 0, share: 0 };
         perPersonMap[split.payerId].paid += split.amount;
+
+        if (split.splitType === 'exact' && split.allocations) {
+            Object.entries(split.allocations).forEach(([id, exactAmt]) => {
+                if (!perPersonMap[id]) perPersonMap[id] = { name: getName(id), paid: 0, share: 0 };
+                perPersonMap[id].share += exactAmt;
+            });
+        } else {
+            const count = split.involvedIds.length;
+            const perShare = split.amount / count;
+            split.involvedIds.forEach(id => {
+                if (!perPersonMap[id]) perPersonMap[id] = { name: getName(id), paid: 0, share: 0 };
+                perPersonMap[id].share += perShare;
+            });
+        }
     });
 
     const selectedPayer = members.find(m => m.id.toString() === payerId.toString());
@@ -243,7 +350,12 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
 
                         {/* ─── LEFT: Add a Split Form ─── */}
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4">
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Add Side Expense</p>
+                            {isEditing && (
+                                <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+                                    <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest flex-1">✏️ Editing entry</span>
+                                    <button onClick={cancelEdit} className="text-[10px] font-black text-slate-500 hover:text-red-500 bg-white border border-slate-200 px-2 py-0.5 rounded-lg transition-colors">Cancel</button>
+                                </div>
+                            )}
 
                             {/* Row 1: Who Paid + Amount */}
                             <div className="grid grid-cols-2 gap-3">
@@ -314,8 +426,15 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
 
                             {/* Row 3: Split Between — avatar pills */}
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Split Between</label>
-                                <div className="flex flex-wrap gap-2 items-center">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Split Type</label>
+                                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+                                        <button onClick={() => setSplitType('equal')} className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${splitType === 'equal' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>Equal</button>
+                                        <button onClick={() => setSplitType('exact')} className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${splitType === 'exact' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-400 hover:text-slate-600'}`}>Exact</button>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in duration-300 mb-2">
                                     {members.map(m => (
                                         <button
                                             key={m.id}
@@ -377,21 +496,120 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                         </button>
                                     )}
                                 </div>
+                                
+                                {splitType === 'exact' && (
+                                    <div className="flex flex-col gap-2 bg-slate-50/50 p-3 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in duration-300">
+                                        {(() => {
+                                            const totalAllocated = Object.values(allocations).reduce((sum, val) => sum + parseFloat(val || 0), 0);
+                                            const numericAmount = parseFloat(amount || 0);
+                                            const remainder = numericAmount - totalAllocated;
+                                            
+                                            // Handle dynamically added guests and filter currently involved
+                                            const allInvolved = [];
+                                            involvedIds.forEach(id => {
+                                                if (typeof id === 'string' && id.startsWith('EXT:')) {
+                                                    allInvolved.push({ id, name: id.replace('EXT:', '') });
+                                                } else {
+                                                    const m = members.find(x => x.id === id);
+                                                    if (m) allInvolved.push(m);
+                                                }
+                                            });
+
+                                            if (allInvolved.length === 0) {
+                                                return (
+                                                    <div className="py-6 text-center text-slate-400 text-xs font-bold">
+                                                        Select members above to allocate precise amounts.
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <>
+                                                    <div className="flex items-center justify-between mb-1 pb-2 border-b border-slate-200 border-dashed">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                            Allocated: ₹{totalAllocated.toLocaleString('en-IN')}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            {remainder > 0.05 && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const emptyIds = allInvolved.filter(x => !(parseFloat(allocations[x.id] || 0) > 0)).map(x => x.id);
+                                                                        if (emptyIds.length === 0) return;
+                                                                        const share = remainder / emptyIds.length;
+                                                                        const newAllocs = { ...allocations };
+                                                                        emptyIds.forEach(id => newAllocs[id] = share.toFixed(2));
+                                                                        setAllocations(newAllocs);
+                                                                    }}
+                                                                    className="text-[9px] font-black bg-orange-500 text-white hover:bg-orange-600 px-2 py-1 rounded shadow-sm hover:shadow-orange-200 transition-all uppercase tracking-widest active:scale-95 flex items-center gap-1"
+                                                                >
+                                                                    Split Rest <Check className="w-2.5 h-2.5" />
+                                                                </button>
+                                                            )}
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${Math.abs(remainder) < 0.05 ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                                                                {Math.abs(remainder) < 0.05 ? 'Perfect ✅' : `₹${remainder.toFixed(0)} left`}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto no-scrollbar pt-1 pr-1">
+                                                        {allInvolved.map(m => (
+                                                            <div key={m.id} className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-100 hover:border-orange-200 transition-colors">
+                                                                <Avatar name={m.name} size="sm" selected={parseFloat(allocations[m.id] || 0) > 0} />
+                                                                <span className="text-xs font-bold text-slate-700 flex-1 truncate">{m.name}</span>
+                                                                <div className="relative w-28">
+                                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black">₹</span>
+                                                                    <input 
+                                                                        type="text"
+                                                                        className="w-full pl-6 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-orange-400 focus:bg-orange-50 transition-all"
+                                                                        placeholder="0"
+                                                                        value={allocations[m.id] || ''}
+                                                                        onChange={e => {
+                                                                            const val = e.target.value.replace(/[^\d.]/g, '');
+                                                                            setAllocations({...allocations, [m.id]: val});
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Error */}
-                            {addError && (
-                                <p className="text-red-500 text-xs font-bold flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-2 rounded-xl">
-                                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {addError}
-                                </p>
-                            )}
+                            {/* Guidance banner (replaces raw error for remainder shortfall) */}
+                            {addError && (() => {
+                                const isRemainderError = addError.includes('must exactly equal');
+                                const numericAmount = parseFloat(amount || 0);
+                                const totalAllocated = Object.values(allocations).reduce((s, v) => s + parseFloat(v || 0), 0);
+                                const remainder = numericAmount - totalAllocated;
 
-                            {/* Add button */}
+                                if (isRemainderError) {
+                                    return (
+                                        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                                            <span className="text-lg">💡</span>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black text-amber-800">₹{remainder.toFixed(0)} still unallocated</p>
+                                                <p className="text-[10px] text-amber-600 font-medium">Click <strong>"Split Rest"</strong> above to divide equally, or enter amounts manually.</p>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <p className="text-red-500 text-xs font-bold flex items-center gap-1.5 bg-red-50 border border-red-100 px-3 py-2 rounded-xl">
+                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {addError}
+                                    </p>
+                                );
+                            })()}
+
+                            {/* Add / Update button */}
                             <button
                                 onClick={addSplit}
                                 className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-black py-3 rounded-2xl transition-all shadow-md hover:shadow-orange-200 hover:-translate-y-0.5 active:scale-[0.98] text-sm flex justify-center items-center gap-2"
                             >
-                                <Plus className="w-4 h-4" /> Add Expense
+                                {isEditing ? <><Check className="w-4 h-4" /> Save Changes</> : <><Plus className="w-4 h-4" /> Add Expense</>}
                             </button>
                         </div>
 
@@ -425,32 +643,78 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                     <div className="divide-y divide-slate-50">
                                         {visibleSplits.map(split => {
                                             const payerName = members.find(m => m.id.toString() === split.payerId?.toString())?.name || 'Unknown';
-                                            const count = split.involvedIds.length;
-                                            const perShare = split.amount / count;
-                                            const namesList = split.involvedIds.map(id => getName(id).replace(' (Guest)', '')).join(', ');
+                                            const isExact = split.splitType === 'exact';
+                                            const count = split.involvedIds?.length || 0;
+                                            const perShare = isExact ? null : (count > 0 ? split.amount / count : 0);
+                                            const namesList = (split.involvedIds || []).map(id => getName(id).replace(' (Guest)', ''));
+                                            // Strip auto-prefix added by Smart Inbox
+                                            const displayDesc = (split.description || '').replace(/^👥 Split:\s*/i, '');
 
                                             return (
-                                                <div key={split.id} className="flex items-center gap-3 px-5 py-3.5 group hover:bg-orange-50/40 transition-colors">
-                                                    <Avatar name={payerName} size="sm" selected />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-bold text-slate-700 truncate">
-                                                            {payerName}
-                                                            {split.description && <span className="text-slate-400 font-normal"> · {split.description}</span>}
-                                                        </p>
-                                                        <p className="text-[11px] text-slate-400 truncate" title={namesList}>
-                                                            Split with {namesList}
-                                                        </p>
+                                                <div
+                                                    key={split.id}
+                                                    className="group relative px-4 py-3 hover:bg-orange-50/40 transition-colors border-b border-slate-50 last:border-0 cursor-pointer"
+                                                    onClick={() => setTappedCardId(prev => prev === split.id ? null : split.id)}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <Avatar name={payerName} size="sm" selected />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-0.5">
+                                                                <p className="text-sm font-black text-slate-800 truncate flex-1">
+                                                                    {displayDesc || <span className="italic text-slate-400 font-normal">No description</span>}
+                                                                </p>
+                                                                <p className="text-sm font-black text-emerald-600 flex-shrink-0">₹{split.amount.toLocaleString('en-IN')}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Paid by {payerName}</span>
+                                                                <span className="text-slate-200">·</span>
+                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
+                                                                    isExact ? 'bg-orange-100 text-orange-600' : 'bg-indigo-100 text-indigo-600'
+                                                                }`}>
+                                                                    {isExact ? '⚖️ Exact' : '÷ Equal'}
+                                                                </span>
+                                                                {isExact ? (
+                                                                    <span className="text-[9px] font-bold text-slate-400">{count} people</span>
+                                                                ) : (
+                                                                    <span className="text-[9px] font-bold text-slate-400">₹{perShare?.toFixed(0)} each · {count} people</span>
+                                                                )}
+                                                            </div>
+                                                            {/* Bottom row: pills + reveal buttons */}
+                                                            <div className="flex items-center justify-between gap-2 mt-1.5">
+                                                                <div className="flex items-center gap-1 flex-wrap">
+                                                                    {namesList.slice(0, 5).map((name, i) => (
+                                                                        <span key={i} className="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{name}</span>
+                                                                    ))}
+                                                                    {namesList.length > 5 && (
+                                                                        <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full">+{namesList.length - 5}</span>
+                                                                    )}
+                                                                </div>
+                                                                <div
+                                                                    className={`flex gap-1 flex-shrink-0 transition-opacity duration-200 ${
+                                                                        tappedCardId === split.id
+                                                                            ? 'opacity-100'
+                                                                            : 'opacity-0 md:group-hover:opacity-100'
+                                                                    }`}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                >
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); loadToEdit(split); setTappedCardId(null); }}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[9px] sm:text-[10px] font-black text-indigo-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition-all active:scale-95 whitespace-nowrap"
+                                                                    >
+                                                                        <Edit3 className="w-3 h-3" /> 
+                                                                        <span>EDIT</span>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(split); setTappedCardId(null); }}
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[9px] sm:text-[10px] font-black text-red-500 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition-all active:scale-95 whitespace-nowrap"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" /> 
+                                                                        <span>DELETE</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right flex-shrink-0">
-                                                        <p className="text-sm font-black text-emerald-600">₹{split.amount.toLocaleString('en-IN')}</p>
-                                                        <p className="text-[10px] text-slate-400 font-semibold text-right">{perShare.toFixed(0)} each</p>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => removeSplit(split.id)}
-                                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-100 text-slate-300 hover:text-red-500 rounded-lg ml-1"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
                                                 </div>
                                             );
                                         })}
@@ -487,6 +751,18 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                     </div>
                 </div>
             </div>
+
+            {/* Delete confirmation dialog */}
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={() => { removeSplit(deleteTarget.id); setDeleteTarget(null); }}
+                type="warning"
+                title="Delete this entry?"
+                message={`"${(deleteTarget?.description || '').replace(/^👥 Split:\s*/i, '') || 'This expense'}" will be permanently removed from this split.`}
+                confirmText="Yes, Delete"
+                cancelText="Keep it"
+            />
         </div>
     );
 };

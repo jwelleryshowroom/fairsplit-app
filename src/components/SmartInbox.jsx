@@ -55,16 +55,33 @@ const MemberChip = ({ member, selected, onToggle }) => (
 );
 
 // --- Individual Transaction Card ---
-const TransactionCard = ({ tx, currentGroupId, currentGroupName, currentGroupMembers, onHomeBill, onCustomSplit, onIgnore }) => {
+const TransactionCard = ({ tx, currentGroupId, currentGroupName, currentGroupMembers, onHomeBill, onCustomSplit, onDetailedSplit, onIgnore, knownGuests = [] }) => {
     const activeMembers = (currentGroupMembers || []).filter(m => m.isActive !== false);
     const inactiveMembers = (currentGroupMembers || []).filter(m => m.isActive === false);
 
     const [mode, setMode] = useState('idle'); // 'idle' | 'splitting' | 'loading'
     const [selectedIds, setSelectedIds] = useState([]);
+    const [merchantName, setMerchantName] = useState(tx.merchant || 'Unknown Merchant');
+    const [showGuestInput, setShowGuestInput] = useState(false);
+    const [guestName, setGuestName] = useState('');
 
     const handleSplitOpen = () => {
         setSelectedIds(activeMembers.map(m => m.id.toString()));
+        // Also pre-select any known guests
+        const guestIds = knownGuests.map(g => `EXT:${g}`);
+        setSelectedIds(prev => [...new Set([...activeMembers.map(m => m.id.toString()), ...guestIds])]);
         setMode('splitting');
+    };
+
+    const addGuest = () => {
+        const name = guestName.trim();
+        if (!name) return;
+        // Check if it matches an existing member
+        const existing = activeMembers.find(m => m.name.trim().toLowerCase() === name.toLowerCase());
+        const id = existing ? existing.id.toString() : `EXT:${name}`;
+        setSelectedIds(prev => prev.includes(id) ? prev : [...prev, id]);
+        setGuestName('');
+        setShowGuestInput(false);
     };
 
     const toggleMember = (id) => {
@@ -80,7 +97,11 @@ const TransactionCard = ({ tx, currentGroupId, currentGroupName, currentGroupMem
     const handleConfirmSplit = async () => {
         if (selectedIds.length === 0) return;
         setMode('loading');
-        await onCustomSplit(tx.id, currentGroupId, currentGroupName, currentGroupMembers, selectedIds);
+        await onCustomSplit(tx.id, currentGroupId, currentGroupName, currentGroupMembers, selectedIds, merchantName);
+    };
+
+    const handleOpenDetailed = () => {
+        onDetailedSplit(tx, merchantName);
     };
 
     return (
@@ -99,7 +120,18 @@ const TransactionCard = ({ tx, currentGroupId, currentGroupName, currentGroupMem
                     </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-black text-slate-800 text-sm truncate">{tx.merchant || 'Unknown Merchant'}</p>
+                    {mode === 'splitting' ? (
+                        <input 
+                            type="text" 
+                            value={merchantName} 
+                            onChange={e => setMerchantName(e.target.value)}
+                            className="w-full font-black text-slate-800 text-sm truncate bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-indigo-300"
+                            placeholder="Paid for what?"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <p className="font-black text-slate-800 text-sm truncate">{merchantName}</p>
+                    )}
                     <div className="flex items-center gap-1.5 mt-0.5">
                         <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${getSourceColor(tx.source)}`}>
                             {getSourceIcon(tx.source)}
@@ -125,44 +157,78 @@ const TransactionCard = ({ tx, currentGroupId, currentGroupName, currentGroupMem
                     <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
                 </div>
             ) : mode === 'splitting' ? (
-                /* Inline member picker */
                 <div className="px-4 pb-4 space-y-3 border-t border-slate-50 pt-3">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Split with:</p>
-                    <div className="flex flex-wrap gap-3">
+                    {/* Single flex-wrap row: active members + known guests + inactive + Guest button */}
+                    <div className="flex flex-wrap gap-3 items-start">
                         {activeMembers.map(m => (
                             <div key={m.id} className="relative">
                                 <MemberChip member={m} selected={selectedIds.includes(m.id.toString())} onToggle={toggleMember} />
                             </div>
                         ))}
-                        {inactiveMembers.length > 0 && (
-                            <>
-                                <div className="w-full flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-slate-100" />
-                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Inactive</span>
-                                    <div className="h-px flex-1 bg-slate-100" />
+                        {knownGuests.map(name => {
+                            const id = `EXT:${name}`;
+                            return (
+                                <div key={id} className="relative">
+                                    <MemberChip
+                                        member={{ id, name }}
+                                        selected={selectedIds.includes(id)}
+                                        onToggle={() => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                                    />
                                 </div>
-                                {inactiveMembers.map(m => (
-                                    <div key={m.id} className="relative opacity-50">
-                                        <MemberChip member={m} selected={selectedIds.includes(m.id.toString())} onToggle={toggleMember} />
-                                    </div>
-                                ))}
-                            </>
+                            );
+                        })}
+                        {inactiveMembers.map(m => (
+                            <div key={m.id} className="relative opacity-40">
+                                <MemberChip member={m} selected={selectedIds.includes(m.id.toString())} onToggle={toggleMember} />
+                            </div>
+                        ))}
+                        {/* + Guest button styled like a member chip */}
+                        {showGuestInput ? (
+                            <div className="flex gap-1.5 items-center w-full">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={guestName}
+                                    onChange={e => setGuestName(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') addGuest(); if (e.key === 'Escape') { setShowGuestInput(false); setGuestName(''); } }}
+                                    placeholder="Guest name…"
+                                    className="flex-1 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-100"
+                                />
+                                <button onClick={addGuest} className="text-[10px] font-black text-white bg-indigo-500 hover:bg-indigo-600 px-2 py-1.5 rounded-lg transition-colors">Add</button>
+                                <button onClick={() => { setShowGuestInput(false); setGuestName(''); }} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5">✕</button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setShowGuestInput(true)}
+                                className="flex flex-col items-center gap-1 transition-all active:scale-90"
+                            >
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black border-2 border-dashed border-slate-300 text-slate-400 hover:border-indigo-300 hover:text-indigo-400 transition-all bg-slate-50">＋</div>
+                                <span className="text-[9px] font-bold text-slate-400">Guest</span>
+                            </button>
                         )}
                     </div>
                     <div className="flex gap-2 pt-1">
                         <button
                             onClick={() => setMode('idle')}
-                            className="flex-shrink-0 px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all"
+                            title="Cancel"
+                            className="flex-shrink-0 px-3 py-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all flex items-center justify-center"
                         >
-                            Cancel
+                            <X className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleOpenDetailed}
+                            className="px-3 py-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all whitespace-nowrap"
+                        >
+                            Detailed ↗️
                         </button>
                         <button
                             onClick={handleConfirmSplit}
                             disabled={selectedIds.length === 0}
-                            className="flex-1 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-md shadow-indigo-100"
+                            className="flex-1 py-2 px-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-md shadow-indigo-100 whitespace-nowrap"
                         >
-                            <Check className="w-3.5 h-3.5" />
-                            Confirm Split ({selectedIds.length} member{selectedIds.length !== 1 ? 's' : ''})
+                            <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>Split 👥 {selectedIds.length}</span>
                         </button>
                     </div>
                 </div>
@@ -205,12 +271,21 @@ const SmartInbox = ({
     currentGroupMembers,
     onHomeBill,
     onCustomSplit,
+    onDetailedSplit,
     onPersonal,
-    onClearAll, // new
+    onClearAll,
     setConfirmConfig,
+    customSplits = [], // to derive known guests
 }) => {
-    const [filter, setFilter] = useState('all'); // 'all' | 'credit' | 'debit'
+    const [filter, setFilter] = useState('all');
     const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+
+    // Collect unique guest names from existing custom splits
+    const knownGuests = [...new Set(
+        customSplits.flatMap(s => s.involvedIds || [])
+            .filter(id => typeof id === 'string' && id.startsWith('EXT:'))
+            .map(id => id.replace('EXT:', ''))
+    )];
 
     if (!isOpen) return null;
 
@@ -373,7 +448,9 @@ const SmartInbox = ({
                                 currentGroupMembers={currentGroupMembers}
                                 onHomeBill={onHomeBill}
                                 onCustomSplit={onCustomSplit}
+                                onDetailedSplit={onDetailedSplit}
                                 onIgnore={onPersonal}
+                                knownGuests={knownGuests}
                             />
                         ))
                     )}
@@ -444,7 +521,9 @@ const SmartInbox = ({
                                 currentGroupMembers={currentGroupMembers}
                                 onHomeBill={onHomeBill}
                                 onCustomSplit={onCustomSplit}
+                                onDetailedSplit={onDetailedSplit}
                                 onIgnore={onPersonal}
+                                knownGuests={knownGuests}
                             />
                         ))
                     )}

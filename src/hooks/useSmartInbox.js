@@ -144,7 +144,7 @@ export const useSmartInbox = (user) => {
     }, [userId, transactions, user]);
 
     // --- Assign as Custom Split (only with selectedMemberIds) ---
-    const assignAsCustomSplit = useCallback(async (txId, groupId, groupName, groupMembers, selectedMemberIds) => {
+    const assignAsCustomSplit = useCallback(async (txId, groupId, groupName, groupMembers, selectedMemberIds, customDescription) => {
         if (!userId) return;
         try {
             const tx = transactions.find(t => t.id === txId);
@@ -167,7 +167,7 @@ export const useSmartInbox = (user) => {
                     payerId: me?.id ?? allActive[0].id,
                     amount: tx.amount,
                     involvedIds,
-                    description: `👥 Split: ${tx.merchant || 'Expense'}`,
+                    description: customDescription || `👥 Split: ${tx.merchant || 'Expense'}`,
                 });
             }
 
