@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, BarChart3, TrendingUp, Wallet, Receipt, ArrowUpRight, ArrowDownLeft, Home, BookOpen, Activity, Settings, HelpCircle, LogOut, Loader2, X, Info, Lightbulb, ShoppingCart, UtensilsCrossed, Shirt, CreditCard, User, Shield } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
