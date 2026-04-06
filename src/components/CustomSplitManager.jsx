@@ -158,14 +158,41 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
     }, [isOpen, initialData]);
 
     const toggleInvolved = (id) => {
-        setInvolvedIds(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
+        if (involvedIds.includes(id)) {
+            setInvolvedIds(involvedIds.filter(i => i !== id));
+            setAllocations(current => {
+                const updated = { ...current };
+                delete updated[id];
+                return updated;
+            });
+        } else {
+            setInvolvedIds([...involvedIds, id]);
+        }
     };
 
+    // Extract unique known guests from global customSplits history
+    const knownGuests = React.useMemo(() => {
+        const guests = new Map();
+        customSplits.forEach(s => {
+            const checkId = (id) => {
+                if (typeof id === 'string' && id.startsWith('EXT:')) {
+                    const rawName = id.replace('EXT:', '');
+                    guests.set(rawName.toLowerCase(), { id, name: rawName });
+                }
+            };
+            checkId(s.payerId);
+            s.involvedIds.forEach(checkId);
+        });
+        return Array.from(guests.values());
+    }, [customSplits]);
+
     const addExternal = () => {
-        const nameToCheck = extName.trim();
-        if (!nameToCheck) return;
+        const rawName = extName.trim();
+        if (!rawName) return;
+        
+        // Normalize Guest Name: e.g. "chirag" -> "Chirag"
+        const nameToCheck = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+        
         const existingMember = members.find(m => m.name.trim().toLowerCase() === nameToCheck.toLowerCase());
         if (existingMember) {
             if (!involvedIds.includes(existingMember.id)) setInvolvedIds([...involvedIds, existingMember.id]);
@@ -302,7 +329,15 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
         }
     });
 
-    const selectedPayer = members.find(m => m.id.toString() === payerId.toString());
+    const selectedPayer = members.find(m => m.id.toString() === payerId.toString()) || knownGuests.find(g => g.id.toString() === payerId.toString());
+    
+    const handleClose = () => {
+        if (isEditing && editSnapshot) {
+            cancelEdit();
+        }
+        if (onClose) onClose();
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -310,7 +345,7 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
             {/* Dark glass backdrop */}
             <div
                 className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
+                onClick={handleClose}
             />
 
             {/* Modal Container */}
@@ -327,7 +362,7 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
                     >
                         <X className="w-5 h-5" />
@@ -379,6 +414,13 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                             {members.map(m => (
                                                 <option key={m.id} value={m.id}>{m.name || 'Unnamed'}</option>
                                             ))}
+                                            {knownGuests.length > 0 && (
+                                                <optgroup label="Guests">
+                                                    {knownGuests.map(g => (
+                                                        <option key={g.id} value={g.id}>{g.name} (Guest)</option>
+                                                    ))}
+                                                </optgroup>
+                                            )}
                                         </select>
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                             <ChevronDown className="w-4 h-4 text-slate-400" />
@@ -450,9 +492,25 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                         </button>
                                     ))}
 
-                                    {/* Existing guest chips */}
+                                    {/* Known Persistent Guests */}
+                                    {knownGuests.map(g => (
+                                        <button
+                                            key={g.id}
+                                            onClick={() => toggleInvolved(g.id)}
+                                            className="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border transition-all duration-200 active:scale-95 text-xs font-bold"
+                                            style={involvedIds.includes(g.id)
+                                                ? { background: 'rgba(249,115,22,0.12)', border: '1.5px solid rgba(249,115,22,0.4)', color: '#ea580c' }
+                                                : { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b' }
+                                            }
+                                        >
+                                            <Avatar name={g.name} size="sm" selected={involvedIds.includes(g.id)} />
+                                            {g.name} <span className="text-[9px] font-black opacity-50 ml-0.5">Guest</span>
+                                        </button>
+                                    ))}
+
+                                    {/* Freshly added guests (not yet persistent) */}
                                     {involvedIds
-                                        .filter(id => typeof id === 'string' && id.startsWith('EXT:'))
+                                        .filter(id => typeof id === 'string' && id.startsWith('EXT:') && !knownGuests.some(g => g.id === id))
                                         .map(extId => (
                                             <button
                                                 key={extId}
