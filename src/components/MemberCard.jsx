@@ -365,7 +365,7 @@ const MemberCard = ({
                                 {parseFloat(member.arrears || 0) !== 0 && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setIsArrearModalOpen(true); }}
-                                        className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 ${parseFloat(member.arrears) < 0 ? 'bg-rose-100 text-rose-600 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`}
+                                        className={`mt-1 w-fit whitespace-nowrap inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 ${parseFloat(member.arrears) < 0 ? 'bg-rose-100 text-rose-600 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`}
                                     >
                                         {parseFloat(member.arrears) < 0 ? '↳ owes' : '← owed'} ₹{Math.abs(parseFloat(member.arrears)).toFixed(0)}
                                     </button>
