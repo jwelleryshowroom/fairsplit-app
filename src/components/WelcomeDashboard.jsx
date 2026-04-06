@@ -32,7 +32,7 @@ const WelcomeDashboard = ({ user, onJoin, onCreate }) => {
         if (!user) return;
         const fetchUserData = async () => {
             try {
-                const q = query(collection(db, "v6_groups"), where("createdBy", "==", user.uid));
+                const q = query(collection(db, "v6_groups"), where("memberUids", "array-contains", user.uid));
                 const querySnapshot = await getDocs(q);
                 const groups = querySnapshot.docs.map(doc => ({
                     id: doc.id,
