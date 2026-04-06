@@ -8,7 +8,8 @@ import { useSettings } from '../context/SettingsContext';
 import Modal from './Modal';
 
 const MemberCard = ({
-    member, daysInMonth, isMonthlyMode, updateDays, updateMember, removeMember,
+    member, allMembers, daysInMonth, isMonthlyMode, updateDays, updateMember, removeMember,
+    bulkUpdateArrear, clearArrear,
     onSmartParse, onNameSplit, isDuplicate, isInvalid, isLocked, isShimmering
 }) => {
     const { settings } = useSettings();
@@ -20,6 +21,9 @@ const MemberCard = ({
     const [isCleaning, setIsCleaning] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
+    const [isArrearModalOpen, setIsArrearModalOpen] = useState(false);
+    const [arrearTarget, setArrearTarget] = useState('');
+    const [arrearAmount, setArrearAmount] = useState('');
 
     const nameRef = useRef(null);
     const absentRef = useRef(null);
@@ -247,33 +251,12 @@ const MemberCard = ({
                     )}
                 </div>
 
-                {/* Expandable Manual Arrears Input */}
-                {showAdvanced && (
-                    <div className="flex flex-col justify-center bg-amber-50/50 p-2.5 rounded-2xl border border-amber-200/50 animate-in slide-in-from-right-2 flex-shrink-0 w-28">
-                        <div className="flex items-center justify-between mb-1">
-                            <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest truncate">Arrear {emoji('📉')}</label>
-                            <button onClick={() => setShowAdvanced(false)} className="text-amber-400 hover:text-amber-600 p-0.5 bg-amber-100/50 rounded flex-shrink-0 transition-colors -mr-1 -mt-1"><X className="w-3 h-3" /></button>
-                        </div>
-                        <div className="flex items-center gap-1 w-full">
-                            <span className="font-bold text-amber-800 text-sm">₹</span>
-                            <input
-                                type="number"
-                                value={member.arrears || ''}
-                                onChange={(e) => updateMember(member.id, 'arrears', e.target.value)}
-                                placeholder="0"
-                                className="bg-transparent border-b border-amber-200 outline-none w-full font-black text-amber-900 placeholder-amber-200 text-sm"
-                                autoFocus
-                            />
-                        </div>
-                    </div>
-                )}
-
                 {/* Vertical Action Buttons */}
                 <div className="flex flex-col gap-2 flex-shrink-0 justify-between">
                     <button
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className={`p-2.5 rounded-xl transition-all border flex-1 flex items-center justify-center ${showAdvanced ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100 hover:text-slate-600'}`}
-                        title="Manual Arrears"
+                        onClick={() => { setArrearTarget(''); setArrearAmount(''); setIsArrearModalOpen(true); }}
+                        className={`p-2.5 rounded-xl transition-all border flex-1 flex items-center justify-center ${parseFloat(member.arrears || 0) !== 0 ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-sm' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100 hover:text-slate-600'}`}
+                        title="Set Previous Debt"
                     >
                         <TrendingUp className="w-4 h-4" />
                     </button>
@@ -355,9 +338,7 @@ const MemberCard = ({
                                         <h3
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                // On desktop: clicking name opens inline edit
                                                 if (!isLocked && window.innerWidth >= 1024) setIsEditingName(true);
-                                                // On mobile: do nothing here — card onClick handles popup
                                             }}
                                             className={`text-base font-black tracking-tight truncate transition-colors ${hasError ? 'text-red-600' : 'text-slate-700'} ${!isLocked ? 'lg:cursor-text lg:hover:text-indigo-600' : 'cursor-default'}`}
                                         >
@@ -380,6 +361,15 @@ const MemberCard = ({
                                 <p className="text-[10px] font-bold text-slate-400 truncate tracking-wide mt-0.5">
                                     ₹{(variableBreakdown.total + fixedBreakdown.total).toFixed(0)} total spent
                                 </p>
+                                {/* Arrear badge */}
+                                {parseFloat(member.arrears || 0) !== 0 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setIsArrearModalOpen(true); }}
+                                        className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 ${parseFloat(member.arrears) < 0 ? 'bg-rose-100 text-rose-600 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`}
+                                    >
+                                        {parseFloat(member.arrears) < 0 ? '↳ owes' : '← owed'} ₹{Math.abs(parseFloat(member.arrears)).toFixed(0)}
+                                    </button>
+                                )}
 
                                 {(!isLocked || variableBreakdown.total > 0 || fixedBreakdown.total > 0) && (
                                     <div className="h-1 w-[85%] bg-slate-200/50 rounded-full mt-1.5 overflow-hidden flex gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -455,6 +445,96 @@ const MemberCard = ({
                     </div>
                 )}
                 {renderEditorContent()}
+            </Modal>
+
+            {/* ── Arrear / Previous Debt Modal ── */}
+            <Modal
+                isOpen={isArrearModalOpen}
+                onClose={() => setIsArrearModalOpen(false)}
+                title={`Previous Debt — ${member.name || 'Member'} 📉`}
+            >
+                <div className="flex flex-col gap-6">
+
+                    {/* Linked Debt section */}
+                    <div className="bg-amber-50/60 border border-amber-100 rounded-2xl p-5 flex flex-col gap-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Link a Debt</p>
+                        <p className="text-sm text-slate-500 -mt-2">
+                            <strong className="text-slate-700">{member.name}</strong> owes someone from last month? Select who and the amount — both sides will be updated automatically.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="flex-1">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Owes who?</label>
+                                <select
+                                    value={arrearTarget}
+                                    onChange={e => setArrearTarget(e.target.value)}
+                                    className="w-full bg-white border-2 border-amber-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-amber-400 transition-all"
+                                >
+                                    <option value="">Select member...</option>
+                                    {(allMembers || []).filter(m => String(m.id) !== String(member.id) && m.name && m.isActive !== false).map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="e.g. 11670"
+                                    value={arrearAmount}
+                                    onChange={e => setArrearAmount(e.target.value)}
+                                    className="w-full bg-white border-2 border-amber-200 rounded-xl px-4 py-3 font-bold text-slate-700 outline-none focus:border-amber-400 transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            disabled={!arrearTarget || !parseFloat(arrearAmount)}
+                            onClick={() => {
+                                bulkUpdateArrear?.(member.id, arrearTarget, arrearAmount);
+                                setIsArrearModalOpen(false);
+                            }}
+                            className="w-full bg-amber-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-black py-3 rounded-xl hover:bg-amber-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <TrendingDown className="w-4 h-4" /> Save Debt
+                        </button>
+                    </div>
+
+                    {/* Current arrear display + Clear */}
+                    {parseFloat(member.arrears || 0) !== 0 && (
+                        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4">
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current Arrear</p>
+                                <p className={`text-xl font-black mt-0.5 ${parseFloat(member.arrears) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                    {parseFloat(member.arrears) > 0 ? '+' : ''}₹{parseFloat(member.arrears).toFixed(0)}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => { clearArrear?.(member.id); setIsArrearModalOpen(false); }}
+                                className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl transition-all"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Manual override fallback */}
+                    <div className="flex flex-col gap-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Or set manually</p>
+                        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl px-4 py-3">
+                            <span className="font-bold text-slate-500">₹</span>
+                            <input
+                                type="number"
+                                value={member.arrears || ''}
+                                onChange={e => updateMember(member.id, 'arrears', e.target.value)}
+                                placeholder="Positive = owed to you, Negative = you owe"
+                                className="bg-transparent outline-none w-full font-black text-slate-800 placeholder-slate-300 text-sm"
+                            />
+                        </div>
+                        <p className="text-[9px] text-slate-400 font-medium">Positive = others owe you · Negative = you owe others</p>
+                    </div>
+                </div>
             </Modal>
         </>
     );

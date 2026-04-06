@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -7,6 +7,7 @@ export const useSettlementEngine = (
     members,
     customSplits,
     daysInMonth,
+    isMonthlyMode,
     setMembers,
     saveData,
     setConfirmConfig,
@@ -33,6 +34,19 @@ export const useSettlementEngine = (
 
     const setResults = (val) => { _setResults(val); val ? persistState({ results: val }) : (storageKey && localStorage.removeItem(storageKey)); };
     const setIsModifying = (val) => { _setIsModifying(val); persistState({ isModifying: val }); };
+
+    // --- RE-TRIGGER CALCULATION ON UI TOGGLE ---
+    const isInitialMount = useRef(true);
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        if (results && !isModifying && !isShimmering) {
+            handleCalculateWithShimmer();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMonthlyMode]);
 
     // --- V4: LIVE PENDING DEBTS PREVIEW (From Arrears) ---
     useEffect(() => {
@@ -83,6 +97,11 @@ export const useSettlementEngine = (
 
         const membersToUse = Array.isArray(overrideMembers) ? overrideMembers : members;
         const splitsToUse = Array.isArray(overrideSplits) ? overrideSplits : customSplits;
+
+        // --- GUARD: Members haven't loaded from Firebase yet — wait silently ---
+        if (!membersToUse || membersToUse.length === 0) {
+            return; // Silent exit, do NOT show error
+        }
 
         const validMembers = membersToUse.filter(m => m.name && m.name.trim() !== '');
 
@@ -150,7 +169,7 @@ export const useSettlementEngine = (
 
         const proc = extendedMembers.map(m => ({
             ...m,
-            daysPresent: m.isActive === false ? 0 : Math.max(0, validDays - (parseInt(m.daysAbsent) || 0)),
+            daysPresent: m.isActive === false ? 0 : (isMonthlyMode ? Math.max(0, validDays - (parseInt(m.daysAbsent) || 0)) : 1),
             totalPaidVar: m.isActive === false ? 0 : parseExpenses(m.expenseInput),
             totalPaidFixed: m.isActive === false ? 0 : parseExpenses(m.fixedExpenseInput),
             cCredit: 0,

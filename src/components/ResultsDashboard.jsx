@@ -9,7 +9,7 @@ const ResultsDashboard = ({
     daysInMonth, updateDays,
     pendingDebts, handleUnifiedSettle,
     insights, isInsightsMinimized, setIsInsightsMinimized, generateInsights, isGeneratingInsights,
-    mobileHidden
+    mobileHidden, customSplits
 }) => {
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
@@ -190,9 +190,11 @@ const ResultsDashboard = ({
                         results={results}
                         daysInMonth={daysInMonth}
                         isMonthlyMode={isMonthlyMode}
+                        setIsMonthlyMode={setIsMonthlyMode}
                         onOpenAI={() => setIsAIModalOpen(true)}
                         pendingDebts={pendingDebts}
                         handleUnifiedSettle={handleUnifiedSettle}
+                        customSplits={customSplits}
                     />
                 </div>
             )}

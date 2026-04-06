@@ -78,7 +78,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
         error, setError, invalidMemberIds, setInvalidMemberIds,
         isModifying, setIsModifying, isShimmering,
         handleCalculateWithShimmer, handleUnifiedSettle
-    } = useSettlementEngine(groupId, members, customSplits, daysInMonth, setMembers, saveData, setConfirmConfig, settings);
+    } = useSettlementEngine(groupId, members, customSplits, daysInMonth, isMonthlyMode, setMembers, saveData, setConfirmConfig, settings);
 
     const [insights, setInsights] = useState('');
     const [isInsightsMinimized, setIsInsightsMinimized] = useState(false);
@@ -357,6 +357,7 @@ const ExpenseSplitter = ({ user, groupId, initialRoomName, onLeaveGroup }) => {
                             generateInsights={generateInsights}
                             isGeneratingInsights={isGeneratingInsights}
                             mobileHidden={false}
+                            customSplits={customSplits}
                         />
 
                         {/* Mobile Settlement Plan (Shows only in Overview Tab) */}

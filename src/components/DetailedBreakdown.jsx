@@ -1,7 +1,30 @@
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles } from 'lucide-react';
 
-const DetailedBreakdown = ({ results, daysInMonth, isMonthlyMode, onOpenAI }) => {
+const DetailedBreakdown = ({ results, daysInMonth, isMonthlyMode, setIsMonthlyMode, onOpenAI, customSplits }) => {
     if (!results) return null;
+
+    const [hoveredData, setHoveredData] = useState(null);
+
+    const getMemberCustomBreakdown = (memberId) => {
+        if (!customSplits) return [];
+        const breakdown = [];
+        customSplits.forEach(s => {
+            if (s.description && s.description.startsWith('Settled')) return;
+            if (s.splitType === 'exact' && s.allocations) {
+                const allocKey = Object.keys(s.allocations).find(k => String(k) === String(memberId));
+                if (allocKey) {
+                    const amt = parseFloat(s.allocations[allocKey]) || 0;
+                    if (amt > 0) breakdown.push({ desc: s.description || 'Custom Item', amt });
+                }
+            } else if (s.involvedIds && s.involvedIds.map(String).includes(String(memberId))) {
+                const amt = s.amount / s.involvedIds.length;
+                if (amt > 0) breakdown.push({ desc: s.description || 'Custom Item', amt });
+            }
+        });
+        return breakdown;
+    };
 
     return (
         <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-100 overflow-hidden">
@@ -13,8 +36,8 @@ const DetailedBreakdown = ({ results, daysInMonth, isMonthlyMode, onOpenAI }) =>
                 <div className="flex items-center gap-3">
                     {/* Laptop Split/Month Toggle (Hidden on Mobile) */}
                     <div className="hidden sm:flex items-center bg-white/50 backdrop-blur-md p-1.5 rounded-2xl border border-white shadow-sm">
-                        <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isMonthlyMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'}`}>Split</span>
-                        <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isMonthlyMode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Month</span>
+                        <button onClick={() => setIsMonthlyMode?.(false)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isMonthlyMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Split</button>
+                        <button onClick={() => setIsMonthlyMode?.(true)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isMonthlyMode ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Month</button>
                     </div>
 
                     {/* Premium RGB Mobile AI Button (Inline on Mobile) */}
@@ -77,7 +100,28 @@ const DetailedBreakdown = ({ results, daysInMonth, isMonthlyMode, onOpenAI }) =>
                                 )}
                                 <td className="px-3 py-4 sm:px-8 text-slate-600 font-mono text-right font-medium">₹{m.variableShare.toFixed(0)}</td>
                                 {results.totalFixed > 0 && <td className="px-3 py-4 sm:px-8 text-slate-600 font-mono text-right font-medium">₹{m.fixedShare.toFixed(0)}</td>}
-                                {results.totalCustom > 0 && <td className="px-3 py-4 sm:px-8 text-slate-600 font-mono text-right font-medium">₹{m.displayCustomShare.toFixed(0)}</td>}
+                                {results.totalCustom > 0 && (
+                                    <td className="px-3 py-4 sm:px-8 text-slate-600 font-mono text-right font-medium">
+                                        {m.displayCustomShare > 0 ? (
+                                            <div 
+                                                className="inline-flex items-center gap-1 cursor-help border-b border-dashed border-indigo-300 md:border-transparent md:hover:border-indigo-300 transition-colors pb-[1px]"
+                                                onMouseEnter={(e) => {
+                                                    setHoveredData({ rect: e.currentTarget.getBoundingClientRect(), breakdown: getMemberCustomBreakdown(m.id) });
+                                                }}
+                                                onMouseLeave={() => setHoveredData(null)}
+                                                onClick={(e) => {
+                                                    // Toggle on mobile
+                                                    if (hoveredData) setHoveredData(null);
+                                                    else setHoveredData({ rect: e.currentTarget.getBoundingClientRect(), breakdown: getMemberCustomBreakdown(m.id) });
+                                                }}
+                                            >
+                                                ₹{m.displayCustomShare.toFixed(0)}
+                                            </div>
+                                        ) : (
+                                            `₹${m.displayCustomShare.toFixed(0)}`
+                                        )}
+                                    </td>
+                                )}
                                 <td className={`px-3 py-4 sm:px-8 font-mono font-bold text-right ${m.arrears < 0 ? 'text-rose-500' : m.arrears > 0 ? 'text-emerald-500' : 'text-slate-300'}`}>
                                     {m.arrears !== 0 ? `${m.arrears > 0 ? '+' : '-'}${Math.abs(m.arrears).toFixed(0)}` : '-'}
                                 </td>
@@ -89,6 +133,36 @@ const DetailedBreakdown = ({ results, daysInMonth, isMonthlyMode, onOpenAI }) =>
                     </tbody>
                 </table>
             </div>
+
+            {/* Portal Tooltip to completely bypass table clipping */}
+            {hoveredData && typeof document !== 'undefined' && createPortal(
+                <div 
+                    className="fixed z-[99999] bg-slate-900 border border-slate-700 shadow-2xl rounded-xl p-4 w-56 text-left pointer-events-none transition-opacity duration-150 animate-in fade-in zoom-in-95"
+                    style={{
+                        top: hoveredData.rect.top + (hoveredData.rect.height / 2),
+                        left: hoveredData.rect.left - 16,
+                        transform: 'translate(-100%, -50%)'
+                    }}
+                >
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-700/50 pb-2 flex justify-between items-center">
+                        Breakdown <span>🧾</span>
+                    </p>
+                    <ul className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto no-scrollbar">
+                        {hoveredData.breakdown.map((item, idx) => (
+                            <li key={idx} className="flex justify-between items-start text-[11px] gap-3">
+                                <span className="text-slate-200 leading-tight">{item.desc}</span>
+                                <span className="text-white font-mono shrink-0 font-medium">₹{item.amt.toFixed(0)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    {hoveredData.breakdown.length === 0 && (
+                        <p className="text-xs text-slate-500 text-center italic">No itemized tracking available.</p>
+                    )}
+                    {/* Arrow pointing right */}
+                    <div className="absolute top-1/2 -mt-1.5 -right-1.5 w-3 h-3 bg-slate-900 border-t border-r border-slate-700 rotate-45"></div>
+                </div>, 
+                document.body
+            )}
         </div>
     );
 };

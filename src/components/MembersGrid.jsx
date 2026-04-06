@@ -10,6 +10,21 @@ const MembersGrid = ({
     invalidMemberIds, isShimmering, addMember,
     customSplits, setIsCustomSplitModalOpen
 }) => {
+
+    // Simultaneously set negative arrear on debtor and positive on creditor
+    const bulkUpdateArrear = (fromId, toId, amount) => {
+        const amt = parseFloat(amount) || 0;
+        if (amt <= 0) return;
+        const fromMember = members.find(m => String(m.id) === String(fromId));
+        const toMember   = members.find(m => String(m.id) === String(toId));
+        if (!fromMember || !toMember) return;
+        updateMember(fromId, 'arrears', -Math.abs(amt));
+        const existingTo = parseFloat(toMember.arrears) || 0;
+        updateMember(toId,   'arrears', (existingTo + Math.abs(amt)).toFixed(2));
+    };
+
+    const clearArrear = (memberId) => updateMember(memberId, 'arrears', 0);
+
     return (
         <>
             {/* Header row: Active Members + inline toggle on mobile */}
@@ -51,11 +66,14 @@ const MembersGrid = ({
                     <MemberCard
                         key={m.id}
                         member={m}
+                        allMembers={members}
                         daysInMonth={daysInMonth}
                         isMonthlyMode={isMonthlyMode}
                         updateDays={updateDays}
                         updateMember={updateMember}
                         removeMember={removeMember}
+                        bulkUpdateArrear={bulkUpdateArrear}
+                        clearArrear={clearArrear}
                         onSmartParse={(id, text) => openSmartAddModal(id, text)}
                         onNameSplit={handleNameSplit}
                         isDuplicate={members.filter(mem => mem.isActive !== false && mem.name.trim().toLowerCase() === m.name.trim().toLowerCase() && mem.name.trim() !== '').length > 1}
