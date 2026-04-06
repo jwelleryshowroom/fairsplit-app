@@ -751,7 +751,7 @@ export const CustomSplitModal = ({ isOpen, onClose, members, customSplits, setCu
                                                                     className={`flex gap-1 flex-shrink-0 transition-opacity duration-200 ${
                                                                         tappedCardId === split.id
                                                                             ? 'opacity-100'
-                                                                            : 'opacity-0 md:group-hover:opacity-100'
+                                                                            : 'hidden md:flex md:opacity-0 md:group-hover:opacity-100'
                                                                     }`}
                                                                     onClick={e => e.stopPropagation()}
                                                                 >

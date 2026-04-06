@@ -305,8 +305,14 @@ const MemberCard = ({
                 className={`group relative bg-white/60 backdrop-blur-xl rounded-2xl p-4 lg:p-5 border border-white/40 shadow-sm transition-all duration-300 overflow-hidden ${hasError ? 'border-red-200 bg-red-50/40' : 'hover:border-indigo-200/50 hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 hover:scale-[1.01] cursor-pointer lg:cursor-default'}`}
                 onClick={() => {
                     if (!isLocked && window.innerWidth < 1024) {
+                        const total = variableBreakdown.total + fixedBreakdown.total;
                         setIsMobileModalOpen(true);
-                        setIsEditingExpense(true); // Frictionless instantly open input mode
+                        if (total > 0) {
+                            setIsEditingExpense(false);
+                            setShowDetails(true);
+                        } else {
+                            setIsEditingExpense(true);
+                        }
                     }
                 }}
             >
